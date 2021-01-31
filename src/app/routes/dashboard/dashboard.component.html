@@ -1,0 +1,86 @@
+<page-header></page-header>
+<button (click)="howToUse()">How To Use?</button>点这个开始新手导航
+
+<br>
+<br>
+<br>
+
+<div>
+  <button>hello</button>
+  <span
+    id="testButton"
+    nz-popconfirm
+    nzOkText="下一步"
+    nzCancelText="结束"
+    nzPopconfirmTitle="this is a button"
+    (nzOnConfirm)="howToUseConfirm()"
+    (nzOnCancel)="cancel()"
+    nzPopconfirmPlacement="right">
+  </span>
+</div>
+
+<br>
+
+<div>
+  <div nz-row>
+    <div nz-col nzSpan="12">
+      <table id="table" border="1px solid" width="100%">
+        <tr>
+          <td>hell0</td>
+          <td>hell00</td>
+          <td>hell000</td>
+        </tr>
+        <tr>
+          <td>hell14</td>
+          <td>hell55</td>
+          <td>hell77</td>
+        </tr>
+        <tr>
+          <td>hell65</td>
+          <td>hell44</td>
+          <td>hell6</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <div nz-row>
+  <span
+    nz-col nzSpan="12"
+    id="testTable"
+    nz-popconfirm
+    nzOkText="下一步"
+    nzCancelText="结束"
+    nzPopconfirmTitle="this is a table"
+    (nzOnConfirm)="howToUseConfirm()"
+    (nzOnCancel)="cancel()"
+    nzPopconfirmPlacement="bottom"
+  >
+  </span>
+  </div>
+</div>
+
+<br>
+
+<div>
+  <input type="text" />
+  <span
+    id="testInput"
+    nz-popconfirm
+    nzOkText="完成"
+    nzCancelText="结束"
+    (nzOnConfirm)="howToUseConfirm()"
+    (nzOnCancel)="cancel()"
+    nzPopconfirmTitle="this is a Input"
+    nzPopconfirmPlacement="right"
+  ></span>
+</div>
+
+<br>
+<br>
+
+<button nz-button type="primary" (click)="show()">how to use 2</button>
+<nz-modal [(nzVisible)]="isVisible" nzTitle="how to use" (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()" nzWidth="800" [nzOkText]="buttonMsg" nzCancelText="结束">
+  <img src="../../../assets/img/{{allMsg[currentIndex].img}}" alt="图" width="100%">
+  <p>{{allMsg[currentIndex].msg}}</p>
+</nz-modal>
+

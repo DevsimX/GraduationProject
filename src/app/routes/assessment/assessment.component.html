@@ -1,0 +1,25 @@
+<page-header></page-header>
+<div *ngIf="submit">
+<!--  <h1>这是Submit_id为 {{submit.scene_id}},名为{{submit.title}} 的数据</h1>-->
+<!--  <h2>学生id为 {{submit.student_id}},名为{{submit.student_name}} 的数据</h2>-->
+  <form nz-form [formGroup]="validateForm" (ngSubmit)="submitForm()">
+    <nz-form-item>
+      <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired nzFor="score">分数</nz-form-label>
+      <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请输入正确的数字">
+        <nz-input-number [nzMin]="0" [nzMax]="100" [nzStep]="1" formControlName="score" id="score"></nz-input-number>
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <nz-form-label [nzSm]="6" [nzXs]="24" nzFor="feedback">反馈</nz-form-label>
+      <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请输入反馈">
+        <textarea rows="4" nz-input formControlName="feedback" id="feedback"></textarea>
+      </nz-form-control>
+    </nz-form-item>
+
+    <nz-form-item nz-row class="register-area">
+      <nz-form-control [nzSpan]="14" [nzOffset]="6">
+        <button nz-button nzType="primary">提交评价</button>
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+</div>

@@ -1,0 +1,47 @@
+<page-header></page-header>
+<form nz-form [formGroup]="validateForm" (ngSubmit)="submitForm()">
+  <nz-form-item>
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired nzFor="title">场景名</nz-form-label>
+    <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请输入场景名">
+      <input nz-input formControlName="title" id="title" />
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired nzFor="description">描述</nz-form-label>
+    <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请输入关卡描述">
+      <textarea rows="4" nz-input formControlName="description" id="description"></textarea>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired nzFor="check">检查模式</nz-form-label>
+    <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请选择检查方式">
+      <nz-radio-group formControlName="check_way" id="check">
+        <label nz-radio nzValue="0">机器检查</label>
+        <label nz-radio nzValue="1">人工检查</label>
+      </nz-radio-group>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired nzFor="level_number">关卡数量</nz-form-label>
+    <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请输入关卡数量">
+      <nz-input-number [nzMin]="1" [nzMax]="8" [nzStep]="1" formControlName="level_number" id="level_number" (ngModelChange)="numberChange()"></nz-input-number>
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item *ngFor="let item of levelDes; let i = index">
+    <nz-form-label [nzSm]="6" [nzXs]="24" nzRequired nzFor="l{{i+1}}">关卡{{i+1}}描述</nz-form-label>
+    <nz-form-control [nzSm]="14" [nzXs]="24" nzErrorTip="请输入关卡描述">
+      <textarea rows="4" nz-input formControlName="l{{i+1}}" id="l{{i+1}}"></textarea>
+    </nz-form-control>
+  </nz-form-item>
+
+
+  <nz-form-item nz-row class="register-area">
+    <nz-form-control [nzSpan]="14" [nzOffset]="6">
+      <button nz-button nzType="primary">创景场景</button>
+    </nz-form-control>
+  </nz-form-item>
+</form>

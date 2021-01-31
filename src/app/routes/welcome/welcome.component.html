@@ -1,0 +1,59 @@
+<page-header></page-header>
+<nz-row [nzGutter]="8">
+  <nz-col [nzSpan]="8">
+    <nz-card [nzCover]="coverTemplate" [nzActions]="[actionSetting, actionEdit, actionEllipsis]">
+      <nz-card-meta
+        [nzTitle]="username"
+        nzDescription="{{age}}岁，是个{{role==='teacher'?'老师':'学生'}}；{{quote}}"
+        [nzAvatar]="avatarTemplate"
+      ></nz-card-meta>
+    </nz-card>
+    <ng-template #avatarTemplate>
+      <nz-avatar nzSrc="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png"></nz-avatar>
+    </ng-template>
+    <ng-template #coverTemplate>
+      <img alt="example" src="https://gw.alipayobjects.com/zos/rmsportal/JiqGstEfoWAOHiTxclqi.png"/>
+    </ng-template>
+    <ng-template #actionSetting>
+      <i nz-icon nzType="setting"></i>
+    </ng-template>
+    <ng-template #actionEdit>
+      <i nz-icon nzType="edit"></i>
+    </ng-template>
+    <ng-template #actionEllipsis>
+      <i nz-icon nzType="ellipsis"></i>
+    </ng-template>
+  </nz-col>
+
+  <nz-col nzSpan="16">
+
+    <nz-row [nzGutter]="16">
+      <nz-col [nzSpan]="24">
+        <nz-card>
+          <a routerLink="/list">场景大厅</a>: 选择场景，参与老师发布的挑战，和同学们一起闯关和学习吧！
+
+        </nz-card>
+      </nz-col>
+    </nz-row>
+
+    <nz-row [nzGutter]="16">
+      <nz-col [nzSpan]="24">
+        <nz-card>
+          <a routerLink="/progress">提交记录</a>: 查看历史场景，温故而知新
+        </nz-card>
+      </nz-col>
+    </nz-row>
+
+    <nz-row>
+      <nz-col>
+        <nz-card>
+          <p>最近活跃：</p>
+          <P *ngIf="!hasHistory">您目前还没有任何学习记录，要加油了呀！赶快打开场景大厅选择自己喜欢的场景创作吧！</P>
+          <P *ngIf="hasHistory">{{scene.title}}</P>
+          <p *ngIf="hasHistory">{{history.mt.split(".")[0]}}</p>
+          <button nz-button nzType="primary" [disabled]="!continue" (click)="click()" *ngIf="hasHistory">继续学习</button>
+        </nz-card>
+      </nz-col>
+    </nz-row>
+  </nz-col>
+</nz-row>

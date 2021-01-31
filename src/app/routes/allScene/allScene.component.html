@@ -1,0 +1,60 @@
+<page-header></page-header>
+<nz-card >
+<nz-table [nzData]="list" nzHideOnSinglePage="true">
+  <thead>
+  <tr>
+    <th>编号</th>
+    <th>场景名</th>
+    <th>关卡数</th>
+    <th>描述</th>
+    <th>创建情况</th>
+    <th>检查方式</th>
+    <th>操作</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr *ngFor="let data of list">
+    <td>{{ data.id }}</td>
+    <td>{{ data.title }}</td>
+    <td>{{ data.level_number }}</td>
+    <td [title]="data.description">{{shorten(data.description)}} </td>
+    <td>
+      <nz-tag [nzColor]="'magenta'" *ngIf="!data.objects">未完成</nz-tag>
+      <nz-tag [nzColor]="'green'" *ngIf="data.objects">已完成</nz-tag>
+    </td>
+    <td>
+      <nz-tag [nzColor]="'cyan'" *ngIf="data.check_way">人工核定</nz-tag>
+      <nz-tag [nzColor]="'purple'" *ngIf="!data.check_way">机器核定</nz-tag>
+    </td>
+    <td>
+      <button id="checkLevels" nz-button nzType="primary" (click)="openDrawer(data)">关卡信息</button>
+      <button id="addBlockly" (click)="create(data.id)"  nz-button nzType="primary" [disabled]="data.objects">积木创建</button>
+      <button id="checkBlockly" (click)="check(data.id)"  nz-button nzType="primary" [disabled]="!data.objects">积木查看</button>
+    </td>
+  </tr>
+  </tbody>
+</nz-table>
+</nz-card>
+
+<nz-drawer [nzClosable]="false" [nzVisible]="drawerVisible" [nzWidth]="500" nzPlacement="right" nzTitle="关卡信息" (nzOnClose)="closeDrawer()">
+  <nz-table [nzData]="list" nzHideOnSinglePage="true" [nzBordered]="true" >
+    <thead>
+    <tr>
+      <th style="width: 90px;">字段</th>
+      <th >内容</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr><td>场景名</td><td>{{currentDrawerData.title}}</td></tr>
+    <tr><td>描述</td><td>{{currentDrawerData.description}}</td></tr>
+    <tr *ngIf="currentDrawerData.l1"><td>关卡1</td><td>{{currentDrawerData.l1}}</td></tr>
+    <tr *ngIf="currentDrawerData.l2"><td>关卡2</td><td>{{currentDrawerData.l2}}</td></tr>
+    <tr *ngIf="currentDrawerData.l3"><td>关卡3</td><td>{{currentDrawerData.l3}}</td></tr>
+    <tr *ngIf="currentDrawerData.l4"><td>关卡4</td><td>{{currentDrawerData.l4}}</td></tr>
+    <tr *ngIf="currentDrawerData.l5"><td>关卡5</td><td>{{currentDrawerData.l5}}</td></tr>
+    <tr *ngIf="currentDrawerData.l6"><td>关卡6</td><td>{{currentDrawerData.l6}}</td></tr>
+    <tr *ngIf="currentDrawerData.l7"><td>关卡7</td><td>{{currentDrawerData.l7}}</td></tr>
+    <tr *ngIf="currentDrawerData.l8"><td>关卡8</td><td>{{currentDrawerData.l8}}</td></tr>
+    </tbody>
+  </nz-table>
+</nz-drawer>

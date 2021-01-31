@@ -1,0 +1,43 @@
+<page-header></page-header>
+<nz-card >
+  <nz-table [nzData]="list" nzHideOnSinglePage="true">
+    <thead>
+    <tr>
+      <th>编号</th>
+      <th>场景名</th>
+      <th>学生名</th>
+      <th>状态</th>
+      <th>结果</th>
+      <th>分数</th>
+      <th>完成情况</th>
+      <th>核定方式</th>
+      <th>提交时间</th>
+      <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let data of list">
+      <td>{{ data.id }}</td>
+      <td>{{ data.title }}</td>
+      <td>{{ data.student_name }}</td>
+      <td>
+        <nz-tag [nzColor]="'magenta'" *ngIf="data.status === 1">未评阅</nz-tag>
+        <nz-tag [nzColor]="'green'" *ngIf="data.status !== 1">已评阅</nz-tag>
+      </td>
+      <td>{{ data.status === 1 ? '暂无' : data.result }}</td>
+      <td>{{ data.status === 1 ? '暂无' : data.score }}</td>
+      <td>{{ data.level }} / {{ data.total_level }} </td>
+      <td>
+        <nz-tag [nzColor]="'cyan'" *ngIf="data.check_way">人工核定</nz-tag>
+        <nz-tag [nzColor]="'purple'" *ngIf="!data.check_way">机器核定</nz-tag>
+      </td>
+      <td>{{data.mt.split(".")[0]}}</td>
+      <td>
+        <button id="assess" (click)="assessClick(data.id, data)"  nz-button nzType="primary" [disabled]="data.status !== 1">评阅</button>
+        <button id="check" (click)="checkClick(data.scene_id, data.id)"  nz-button nzType="primary">查看</button>
+      </td>
+    </tr>
+    </tbody>
+  </nz-table>
+</nz-card>
+

@@ -1,0 +1,19 @@
+<page-header>
+</page-header>
+<div nz-row nzGutter="16" *ngFor="let col of sceneList; let i = index">
+  <div nz-col [nzSpan]="24/numPerCol" *ngFor="let item of sceneList[i]; let j = index">
+    <nz-card nzTitle="{{item.title}}" nzHoverable [nzCover]="coverTemplate" [nzExtra]="extraTemplate">
+      <nz-card-meta nzTitle="共{{item.level_number}}关" nzDescription="{{formatDescription(item.description)}}"></nz-card-meta>
+      <div class="buttonDiv">
+        <button nz-button nzType="primary" (click)="click(item.id)">进入</button>
+      </div>
+    </nz-card>
+    <ng-template #coverTemplate>
+      <img alt="example" src="{{item.picture}}" style="padding: 20px 20px;height: 240px"/>
+    </ng-template>
+    <ng-template #extraTemplate>
+      <nz-tag [nzColor]="'cyan'" *ngIf="item.check_way">人工核定</nz-tag>
+      <nz-tag [nzColor]="'purple'" *ngIf="!item.check_way">机器核定</nz-tag>
+    </ng-template>
+  </div>
+</div>

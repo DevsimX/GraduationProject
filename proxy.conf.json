@@ -1,0 +1,15 @@
+{
+  "/blocklyBackend/*": {
+    "target": "http://121.4.43.229:4242",
+    "pathRewrite": {"^/blocklyBackend" : ""},
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
+  },
+  "/pictures/*": {
+    "target": "http://49.233.221.184:8080",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
+  }
+}
