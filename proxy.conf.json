@@ -7,7 +7,7 @@
     "changeOrigin": true
   },
   "/pictures/*": {
-    "target": "http://49.233.221.184:8080",
+    "target": "http://121.4.43.229:6969",
     "secure": false,
     "logLevel": "debug",
     "changeOrigin": true

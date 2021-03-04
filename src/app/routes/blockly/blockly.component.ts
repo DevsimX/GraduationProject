@@ -4,11 +4,13 @@ import { blockly_options } from 'src/assets/blockly/blockly_options.js';
 
 import { Crypto } from 'src/assets/crypto/crypto';
 
-import { SkyRTC } from 'src/assets/video/skyrtcClient'
+import { SkyRTC } from 'src/assets/video/webrtc-client'
 import { SceneType, SceneService, SubmitType } from '../../services/scene.service';
 import { ActivatedRoute } from '@angular/router';
 import { NzMessageService, NzNotificationService } from 'ng-zorro-antd';
+import { UploadFile } from 'ng-zorro-antd/upload';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
+import {NzModalService} from "ng-zorro-antd/modal";
 
 declare var Blockly: any;
 declare var interpreter: any;
@@ -46,6 +48,26 @@ interface MyObjectType{
   p?: number,
   hide?: Boolean
 }
+
+interface webrtcControl {
+  connected?: Boolean,//是否已经连接到了服务器中
+  mediaUsable?: Boolean,//表示媒体流是否可用
+  inputRoomIDString?: string,//input控件输入的文本
+  roomID?: number,//所在的房间号
+  rtc?: any,//webrtc-client对象实体
+  localMediaStream?: object//本地的流媒体
+  mediaStreams?: any[],//所有需要展示的流媒体，数组，格式：name，stream
+  currentDisplayMediaStreamIndex?: number,//当前展示的流媒体的索引
+  videoControl?: string,//控制自己的摄像头权限,open or close
+  audioControl?: string,//控制自己的音频权限,open or close
+  shareValue?: string,//控制分享的设备，摄像头/屏幕/远程控制
+  chatHistory?: any[],//聊天室的历史记录
+  unreadChatNum?: number,//未读的聊天信息的数量
+  chatMessage?: string,//发送给别人的聊天信息
+  fileList?: any[],//文件上传的数组
+  sharing?: boolean,//分享文件的状态
+
+}
 @Component({
   selector: 'app-blockly',
   templateUrl: './blockly.component.html',
@@ -54,6 +76,29 @@ interface MyObjectType{
 })
 export class BlocklyComponent implements OnInit {
   rtc = undefined;
+  webrtcControl: webrtcControl = {
+    connected: false,
+    mediaUsable: false,
+    inputRoomIDString: "",
+    roomID: undefined,
+    rtc: SkyRTC(),
+    localMediaStream: undefined,
+    mediaStreams: [],
+    currentDisplayMediaStreamIndex: undefined,
+    videoControl: 'close',
+    audioControl: 'close',
+    shareValue: 'shareCamera',
+    chatHistory: [],
+    unreadChatNum: 0,
+    chatMessage: '',
+    fileList : [],
+    sharing : false,
+  }
+  tabs = [];
+  chatRoomVisible = false;//聊天室抽屉的显示与否
+  successDuration = 3000;//成功的notification的延时时长
+  errorDuration = 3000;//失败的notification的延时时长
+  selectedIndex = 0;
   workspace = undefined;
   objects: any = { moveObject: {} }; // 运行过程中的objects
   oldObjects: any = { moveObject: {} }; // 场景原objects
@@ -107,6 +152,7 @@ export class BlocklyComponent implements OnInit {
     private route: ActivatedRoute,
     private message: NzMessageService,
     private notification: NzNotificationService,
+    private modal: NzModalService,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
   ) {
   }
@@ -115,7 +161,15 @@ export class BlocklyComponent implements OnInit {
   ngOnInit(): void {
     let crypto: cryptoType = new Crypto();
     let that = this;
+    this.webrtcInit();
     this.initCanvas();
+    for (let i = 0; i < 30; i++) {
+      this.tabs.push({
+        name: `Tab ${i}`,
+        disabled: i === 28,
+        content: `Content of tab ${i}`
+      });
+    }
     // 先获得场景编号，然后根据当前的模式判断应该执行的内容
     this.route.params.subscribe(function(data) {
       that.sceneID = data.id;
@@ -155,6 +209,291 @@ export class BlocklyComponent implements OnInit {
         }
       });
     });
+  }
+
+  webrtcInit(): void{
+    let that = this;
+    let rtc = that.webrtcControl.rtc;
+    let notification = that.notification;
+    let message = that.message;
+    //成功创建WebSocket连接
+    rtc.on("connected", function (names) {
+      that.webrtcControl.inputRoomIDString = '';
+      for(let index in names){
+        that.webrtcControl.mediaStreams.push({
+          name: names[index],
+          stream: new MediaStream(),
+        })
+      }
+      message.success(
+        '成功进入房间',
+        {nzDuration: that.successDuration}
+      );
+      that.webrtcControl.connected = true;
+      //创建本地视频流
+      rtc.createStream({
+        "video": true,
+        "audio": true
+      });
+    });
+
+    //创建本地视频流成功
+    rtc.on("stream_created", function (stream) {
+      //创建视频流之后立刻静音
+      rtc.changeVideoTrackMuted(false);
+      rtc.changeAudioTrackMuted(false);
+      that.webrtcControl.mediaStreams.splice(0,0,{
+        name: '我',
+        stream: stream,
+      })
+      that.webrtcControl.currentDisplayMediaStreamIndex = 0;
+      that.webrtcControl.mediaUsable = true;
+      message.success(
+        '视频流创建成功，显示在右下方',
+        {nzDuration: that.successDuration}
+      )
+    });
+
+    //创建本地视频流失败
+    rtc.on("stream_create_error", function (error) {
+      notification.error(
+        '创建视频流失败',
+        error.message,
+      )
+      that.disconnect();
+    });
+
+    //用户重复进入服务器
+    rtc.on("repeatedName", function () {
+      notification.error(
+        '你已经在服务器中',
+        '请检查是否你的账号在其他地方登录进入了服务器中',
+        {nzDuration: that.successDuration}
+      )
+    });
+
+    //删除其他用户
+    rtc.on('remove_peer_video', function (name) {
+      for(let i = 0 ; i < that.webrtcControl.mediaStreams.length; i++){
+        if(name === that.webrtcControl.mediaStreams[i].name){
+          that.webrtcControl.mediaStreams.splice(i,1);
+          break;
+        }
+      }
+      if(that.webrtcControl.currentDisplayMediaStreamIndex >= that.webrtcControl.mediaStreams.length)
+        that.webrtcControl.currentDisplayMediaStreamIndex = that.webrtcControl.mediaStreams.length-1;
+      message.success(name+'退出了房间',{nzDuration: that.successDuration})
+    });
+
+    //接收到其他用户的视频流
+    rtc.on('pc_add_track', function (track, name) {
+      let stream = <MediaStream> that.findStreamByName(name);
+      if(track.kind === 'video'){
+        if(stream.getVideoTracks().length !== 0){
+          stream.removeTrack(stream.getVideoTracks()[0]);
+          stream.addTrack(track);
+        }else
+          stream.addTrack(track);
+      }else if(track.kind === 'audio'){
+        if(stream.getAudioTracks().length !== 0 && track.kind === 'audio'){
+          stream.removeTrack(stream.getAudioTracks()[0]);
+          stream.addTrack(track);
+        }else
+          stream.addTrack(track)
+      }else {
+        notification.error('视频流轨道存在问题','错误代码044',{nzDuration: that.errorDuration});
+      }
+    });
+
+    //当房间中有新用户加入时
+    rtc.on('new_client_joined',function (name){
+      that.webrtcControl.mediaStreams.push({
+        name:name,
+        stream: new MediaStream(),
+      })
+      message.success(name+'加入到了房间中',{nzDuration: that.successDuration})
+    });
+
+    //成功断开连接
+    rtc.on('close_connection_successfully', function () {
+      message.success('你已经成功退出了房间',{nzDuration: that.successDuration});
+    });
+
+    //接收到文字信息
+    rtc.on('data_channel_message', function ( name,time, message) {
+      that.webrtcControl.chatHistory.push({
+        name: name,
+        time: time,
+        message: message
+      })
+      that.webrtcControl.unreadChatNum++;
+    });
+
+    //重设本地流
+    rtc.on("stream_reset", function (stream) {
+      if(that.setStreamByName('我',stream))
+        that.message.success('视频流切换成功',{nzDuration: that.successDuration});
+      else
+        that.message.error('视频流切换失败',{nzDuration: that.errorDuration});
+    });
+
+    //成功发送文件
+    rtc.on("file_send_successful", function () {
+      that.message.success('文件已发送给所有人');
+      that.webrtcControl.fileList = [];
+    });
+
+    //接收到文件发送的请求
+    rtc.on("receive_file_ask", function (sendId, socketId, fileName, fileSize) {
+      that.modal.confirm({
+        nzTitle: '是否接收文件?',
+        nzContent: '文件名: '+fileName + '\n文件大小: '+fileSize + 'kb',
+        nzOnOk: () =>{
+          that.webrtcControl.rtc.sendFileAccept(sendId);
+        },
+        nzOnCancel: () =>{
+          that.webrtcControl.rtc.sendFileRefuse(sendId);
+        }
+      })
+    });
+
+    //对方同意接收文件
+    // rtc.on("send_file_accepted", function (sendId, socketId, file) {
+    //   var p = document.getElementById("sf-" + sendId);
+    //   p.innerText = "对方接收" + file.name + "文件，等待发送";
+    //
+    // });
+
+    //对方拒绝接收文件
+    // rtc.on("send_file_refused", function (sendId, socketId, file) {
+    //   var p = document.getElementById("sf-" + sendId);
+    //   p.innerText = "对方拒绝接收" + file.name + "文件";
+    // });
+
+    //发送文件碎片
+    rtc.on('send_file_chunk', function (sendId, socketId, percent, file) {
+      console.log(file.name + "文件正在发送: " + Math.ceil(percent) + "%")
+      // var p = document.getElementById("sf-" + sendId);
+      // p.innerText = file.name + "文件正在发送: " + Math.ceil(percent) + "%";
+    });
+
+    //接受文件碎片
+    rtc.on('receive_file_chunk', function (sendId, socketId, fileName, percent) {
+      console.log("正在接收" + fileName + "文件：" + Math.ceil(percent) + "%")
+      // var p = document.getElementById("rf-" + sendId);
+      // p.innerText = "正在接收" + fileName + "文件：" + Math.ceil(percent) + "%";
+    });
+
+    //接收到文件
+    // rtc.on('receive_file', function (sendId, socketId, name) {
+    //   var p = document.getElementById("rf-" + sendId);
+    //   p.parentNode.removeChild(p);
+    // });
+
+    //发送文件时出现错误
+    rtc.on('send_file_error', function (error) {
+      console.log(error);
+    });
+
+    //接收文件时出现错误
+    rtc.on('receive_file_error', function (error) {
+      console.log(error);
+    });
+  }
+
+  openChatRoom(): void{
+    this.chatRoomVisible = true;
+    this.webrtcControl.unreadChatNum = 0;
+  }
+
+  closeChatRoom(): void{
+    this.chatRoomVisible = false;
+    this.webrtcControl.unreadChatNum = 0;
+  }
+
+  beforeUpload = (file: UploadFile): boolean => {
+    let that = this;
+    if(that.webrtcControl.fileList.length >= 2){
+      this.notification.error('上传文件数量受限','一次最多选择两个文件进行上传',{nzDuration: this.errorDuration})
+      return false;
+    }
+    that.webrtcControl.fileList = that.webrtcControl.fileList.concat(file);
+    return false;
+  };
+
+  shareFiles(): void{
+    let that = this;
+    for(let file of that.webrtcControl.fileList){
+      that.webrtcControl.rtc.shareFile(file);
+    }
+  }
+
+  clearChatHistory() : void{
+    this.webrtcControl.chatHistory = [];
+  }
+
+  broadcastMessage(): void{
+    let that = this;
+    let message = that.webrtcControl.chatMessage;
+    let time = this.getTime();
+    that.webrtcControl.rtc.broadcast(message,time);
+    that.webrtcControl.chatHistory.push({
+      name: '我',
+      time: time,
+      message: message,
+    })
+    that.webrtcControl.chatMessage = '';
+  }
+
+  getTime(): string {
+    var today=new Date();
+    var y=today.getFullYear();
+    var m=today.getMonth();
+    var d=today.getDate();
+    var h=today.getHours();
+    var i=today.getMinutes();
+    var s=today.getSeconds();// 在小于10的数字钱前加一个‘0’
+    m=m+1;
+    d=this.checkTime(d);
+    m=this.checkTime(m);
+    i=this.checkTime(i);
+    s=this.checkTime(s);
+    return (y+"年"+m+"月"+d+"日"+" "+h+":"+i+":"+s)
+  }
+  checkTime(i){
+    if (i<10){
+      i="0" + i;
+    }
+    return i;
+  }
+
+  //如果返回的是false说明当前操作系统是手机端，如果返回的是true则说明当前的操作系统是电脑端
+  IsPC() {
+    var userAgentInfo = navigator.userAgent;
+    var Agents = ["Android", "iPhone","SymbianOS", "Windows Phone","iPad", "iPod"];
+    var flag = true;
+
+    for (var v = 0; v < Agents.length; v++) {
+      if (userAgentInfo.indexOf(Agents[v]) > 0) {
+        flag = false;
+        break;
+      }
+    }
+
+    return flag;
+  }
+
+  shareDeviceChange(event): void{
+    if(this.IsPC()){
+      let device = event[0];
+      let rtc = this.webrtcControl.rtc;
+      if(device === 'shareCamera' || device === 'shareDesktop'){
+        rtc.shareDeviceChange(device);
+      }else if(device === 'shareRemoteControl'){
+
+      }
+    }else
+      this.message.error('非pc端不可使用共享屏幕',{nzDuration: this.errorDuration})
   }
 
   setTitle(str) {
@@ -244,7 +583,7 @@ export class BlocklyComponent implements OnInit {
           that.levelIndex = 1;
           that.level = that.scene.l1;
           let objects = JSON.parse(that.scene.objects) as ObjectsType;
-          console.log(res.list[0]);
+          // console.log(res.list[0]);
           that.addObjectsToCanvas(objects);
         }
       });
@@ -268,7 +607,7 @@ export class BlocklyComponent implements OnInit {
   }
 
   addObjectsToCanvas(objects) {
-    let baseUrl = 'http://49.233.221.184:8080/';
+    let baseUrl = 'https://121.4.43.229:6969/';
     if (objects.backgroundImg) {
       let url = objects.backgroundImg.indexOf('http') !== -1 ? objects.backgroundImg : (baseUrl + objects.backgroundImg);
       document.getElementById("background").style.backgroundImage = "url('" + url + "')";
@@ -754,154 +1093,275 @@ export class BlocklyComponent implements OnInit {
     });
   }
 
-  // 视频流相关
-  videoError(){
-    this.notification.success('引导', '3s后将打开引导修正界面');
-    setTimeout(function() {
-      window.open('https://49.233.221.184:9000/')
-    },3000);
+  /**************webrtc部分****************/
+  connect(): void{
+    if(this.checkInputRoomID(this.webrtcControl.inputRoomIDString)){
+      // console.log(this.tokenService.get())
+      this.webrtcControl.rtc.connect(
+        "wss://www.xytcloud.ltd:4433/xyt",
+        this.webrtcControl.roomID,
+        this.tokenService.get().username+Math.ceil(Math.random()*100),
+        this.tokenService.get().name,
+        )
+    }
   }
 
-  createVideo(roomId, opt): void {
-    var roomDIV = document.getElementById('room');
-    var option = document.getElementById('option');
-    var videos = document.getElementById('videos');
-    var roomInput = document.getElementById('inputRoom');
-    var rtc = this.rtc = SkyRTC() as SkyRTCType;
-    var ready = false;
+  setStreamByName(name,stream): boolean{
     let that = this;
-    function createSteam(video, audio) {
-      //创建本地视频流
-      rtc.createStream({
-        'video': video,
-        'audio': audio,
-      });
+    for(let item of that.webrtcControl.mediaStreams){
+      if(item.name === name){
+        item.stream = stream;
+        return true;
+      }
     }
-    function check() {
-      var res;
-      if (opt === 0) {
-        res = rtc.connections.length === 0;
-        if (res) {
-          that.message.create('success', `成功创建房间`);
-          return true;
-        } else {
-          that.message.create('error', `该房间已存在`);
-        }
-      } else if (opt === 1) {
-        res = rtc.connections.length > 0;
-        if (res) {
-          that.message.create('success', `成功加入房间`);
-          return true;
-        } else {
-          that.message.create('error', `该房间不存在`);
-        }
-      } else if (opt === 2) return true;
+    return false;
+  }
+
+  findStreamByName(name): object{
+    let that = this;
+    for(let item of that.webrtcControl.mediaStreams){
+      if(item.name === name){
+        return item.stream;
+      }
+    }
+    return null;
+  }
+
+  checkInputRoomID(str): boolean{
+    const reg = new RegExp("^[0-9]*$");
+    if(str === ""){
+      this.notification.create(
+        'error',
+        '输入的房间号不能为空',
+        '请输入你想要进入的房间号（纯数字）',
+        {nzDuration: this.errorDuration}
+      );
       return false;
-    }
-
-    //成功创建WebSocket连接
-    rtc.on('connected', function(socket) {
-      ready = check();
-      if (ready) {
-        createSteam(true, true);
-        roomDIV.style.display = 'none';
-        option.style.display = 'block';
-        roomInput.style.visibility = 'hidden';
-      } else rtc.socket.close();
-    });
-    //创建本地视频流成功
-    rtc.on('stream_created', function(stream) {
-      var me = document.getElementById('me') as HTMLVideoElement;
-      try {
-        me.src = URL.createObjectURL(stream);
-      } catch (e) {
-        me.srcObject = stream;
-      }
-      me.play();
-    });
-    //创建本地视频流失败
-    rtc.on('stream_create_error', function(e) {
-      that.notification.error('错误', '视频通话建立失败，3s后将打开引导修正界面');
-      setTimeout(function() {
-        window.open('https://49.233.221.184:9000/')
-      },3000);
-    });
-    //接收到其他用户的视频流
-    rtc.on('pc_add_stream', function(stream, socketId) {
-      var newVideo = document.createElement('video'),
-        id = 'other-' + socketId;
-      newVideo.setAttribute('class', 'other');
-      newVideo.setAttribute('autoplay', 'autoplay');
-      newVideo.setAttribute('id', id);
-      newVideo.setAttribute('width','370px');
-      newVideo.setAttribute('style','margin: 9px 14px;');
-      videos.appendChild(newVideo);
-      rtc.attachStream(stream, id);
-    });
-    //删除其他用户
-    rtc.on('remove_peer', function(socketId) {
-      var video = document.getElementById('other-' + socketId);
-      if (video) {
-        video.parentNode.removeChild(video);
-      }
-    });
-
-    //连接WebSocket服务器
-    var protocolStr = document.location.protocol;
-    var room = roomId;
-    let ws = '49.233.221.184:3000';
-    let wss = '49.233.221.184:9000';
-    if (protocolStr === 'http:') {
-      rtc.connect('ws:' + ws, room);
-    } else if (protocolStr === 'https:') {
-      rtc.connect('wss:' + wss, room);
-    } else {
-      alert('请访问https服务');
+    }else if(!reg.test(str)){
+      this.notification.create(
+        'error',
+        '房间号格式错误',
+        '输入的房间号必须为纯数字',
+        {nzDuration: this.errorDuration}
+      );
+      return false;
+    }else {
+      this.webrtcControl.roomID = parseInt(str);
+      return true;
     }
   }
 
-  createRoom(): void {
-    if(!this.roomID.trim()){
-      this.message.create('warning', `请输入房间号`);
-      return;
-    }
-    this.createVideo(this.roomID, 0);
+  disconnect(): void{
+    let that = this;
+    this.webrtcControl.connected = false;
+    let rtc = this.webrtcControl.rtc;
+    rtc.closeConnectionWithServer();
+    that.webrtcControl.mediaStreams = [];
+    that.webrtcControl.videoControl = 'close';
+    that.webrtcControl.audioControl = 'close';
+    that.webrtcControl.shareValue = 'shareCamera';
+    that.webrtcControl.currentDisplayMediaStreamIndex = undefined;
+    that.webrtcControl.mediaUsable = false;
+    that.webrtcControl.connected = false;
+    that.webrtcControl.roomID = undefined;
+    that.webrtcControl.inputRoomIDString = '';
   }
 
-  joinRoom(): void {
-    if(!this.roomID.trim()){
-      this.message.create('warning', `请输入房间号`);
-      return;
-    }
-    this.createVideo(this.roomID, 1);
-  }
-
-  quitRoom() {
-    var roomDIV = document.getElementById('room');
-    var option = document.getElementById('option');
-    var roomInput = document.getElementById('inputRoom');
-    if (this.rtc.socket)
-      this.rtc.socket.close();
-    var videos = document.getElementById('videos');
-    videos.innerHTML = '<video id="me" autoplay width="370px" style="margin: 14px 14px 0 14px;"></video>';
-    roomDIV.style.display = 'block';
-    option.style.display = 'none';
-    roomInput.style.visibility = 'visible';
-  }
-
-  changeCamera() {
-    var closeC = document.getElementById('close');
-    if (closeC.innerText === '关闭摄像头') {
-      this.message.create('success', `成功关闭摄像头`);
-      this.rtc.localMediaStream.getTracks()[1].stop();
-      closeC.innerText = '打开摄像头';
-    } else {
-      this.message.create('success', `成功打开摄像头`);
-      closeC.innerText = '关闭摄像头';
-      this.rtc.socket.close();
-      this.createVideo(this.roomID, 2);
+  videoControlChanged(event): void{
+    let rtc = this.webrtcControl.rtc;
+    let operation = event[0];
+    if(operation === 'close'){
+      rtc.changeVideoTrackMuted(false);
+      this.message.success(
+        '摄像头已关闭',
+        {nzDuration: this.successDuration}
+      )
+    }else if(operation === 'open'){
+      rtc.changeVideoTrackMuted(true);
+      this.message.success(
+        '摄像头已打开',
+        {nzDuration: this.successDuration}
+      )
+    }else {
+      this.notification.error(
+        '出现了未知的错误',
+        '错误代码042',
+        {nzDuration: this.errorDuration}
+      )
     }
   }
+
+  audioControlChanged(event): void{
+    let rtc = this.webrtcControl.rtc;
+    let operation = event[0];
+    if(operation === 'close'){
+      rtc.changeAudioTrackMuted(false);
+      this.message.success(
+        '音频已打开',
+        {nzDuration: this.successDuration}
+      )
+    }else if(operation === 'open'){
+      rtc.changeAudioTrackMuted(true);
+      this.message.success(
+        '音频已关闭',
+        {nzDuration: this.successDuration}
+      )
+    }else {
+      this.notification.error(
+        '出现了未知的错误',
+        '错误代码043',
+        {nzDuration: this.errorDuration}
+      )
+    }
+  }
+  // // 视频流相关
+  // videoError(){
+  //   this.notification.success('引导', '3s后将打开引导修正界面');
+  //   setTimeout(function() {
+  //     window.open('https://49.233.221.184:9000/')
+  //   },3000);
+  // }
+  //
+  // createVideo(roomId, opt): void {
+  //   var roomDIV = document.getElementById('room');
+  //   var option = document.getElementById('option');
+  //   var videos = document.getElementById('videos');
+  //   var roomInput = document.getElementById('inputRoom');
+  //   var rtc = this.rtc = SkyRTC() as SkyRTCType;
+  //   var ready = false;
+  //   let that = this;
+  //   function createSteam(video, audio) {
+  //     //创建本地视频流
+  //     rtc.createStream({
+  //       'video': video,
+  //       'audio': audio,
+  //     });
+  //   }
+  //   function check() {
+  //     var res;
+  //     if (opt === 0) {
+  //       res = rtc.connections.length === 0;
+  //       if (res) {
+  //         that.message.create('success', `成功创建房间`);
+  //         return true;
+  //       } else {
+  //         that.message.create('error', `该房间已存在`);
+  //       }
+  //     } else if (opt === 1) {
+  //       res = rtc.connections.length > 0;
+  //       if (res) {
+  //         that.message.create('success', `成功加入房间`);
+  //         return true;
+  //       } else {
+  //         that.message.create('error', `该房间不存在`);
+  //       }
+  //     } else if (opt === 2) return true;
+  //     return false;
+  //   }
+  //
+  //   //成功创建WebSocket连接
+  //   rtc.on('connected', function(socket) {
+  //     ready = check();
+  //     if (ready) {
+  //       createSteam(true, true);
+  //       roomDIV.style.display = 'none';
+  //       option.style.display = 'block';
+  //       roomInput.style.visibility = 'hidden';
+  //     } else rtc.socket.close();
+  //   });
+  //   //创建本地视频流成功
+  //   rtc.on('stream_created', function(stream) {
+  //     var me = document.getElementById('me') as HTMLVideoElement;
+  //     try {
+  //       me.src = URL.createObjectURL(stream);
+  //     } catch (e) {
+  //       me.srcObject = stream;
+  //     }
+  //     me.play();
+  //   });
+  //   //创建本地视频流失败
+  //   rtc.on('stream_create_error', function(e) {
+  //     that.notification.error('错误', '视频通话建立失败，3s后将打开引导修正界面');
+  //     setTimeout(function() {
+  //       window.open('https://49.233.221.184:9000/')
+  //     },3000);
+  //   });
+  //   //接收到其他用户的视频流
+  //   rtc.on('pc_add_stream', function(stream, socketId) {
+  //     var newVideo = document.createElement('video'),
+  //       id = 'other-' + socketId;
+  //     newVideo.setAttribute('class', 'other');
+  //     newVideo.setAttribute('autoplay', 'autoplay');
+  //     newVideo.setAttribute('id', id);
+  //     newVideo.setAttribute('width','370px');
+  //     newVideo.setAttribute('style','margin: 9px 14px;');
+  //     videos.appendChild(newVideo);
+  //     rtc.attachStream(stream, id);
+  //   });
+  //   //删除其他用户
+  //   rtc.on('remove_peer', function(socketId) {
+  //     var video = document.getElementById('other-' + socketId);
+  //     if (video) {
+  //       video.parentNode.removeChild(video);
+  //     }
+  //   });
+  //
+  //   //连接WebSocket服务器
+  //   var protocolStr = document.location.protocol;
+  //   var room = roomId;
+  //   let ws = '49.233.221.184:3000';
+  //   let wss = '49.233.221.184:9000';
+  //   if (protocolStr === 'http:') {
+  //     rtc.connect('ws:' + ws, room);
+  //   } else if (protocolStr === 'https:') {
+  //     rtc.connect('wss:' + wss, room);
+  //   } else {
+  //     alert('请访问https服务');
+  //   }
+  // }
+  //
+  // createRoom(): void {
+  //   if(!this.roomID.trim()){
+  //     this.message.create('warning', `请输入房间号`);
+  //     return;
+  //   }
+  //   this.createVideo(this.roomID, 0);
+  // }
+  //
+  // joinRoom(): void {
+  //   if(!this.roomID.trim()){
+  //     this.message.create('warning', `请输入房间号`);
+  //     return;
+  //   }
+  //   this.createVideo(this.roomID, 1);
+  // }
+  //
+  // quitRoom() {
+  //   var roomDIV = document.getElementById('room');
+  //   var option = document.getElementById('option');
+  //   var roomInput = document.getElementById('inputRoom');
+  //   if (this.rtc.socket)
+  //     this.rtc.socket.close();
+  //   var videos = document.getElementById('videos');
+  //   videos.innerHTML = '<video id="me" autoplay width="370px" style="margin: 14px 14px 0 14px;"></video>';
+  //   roomDIV.style.display = 'block';
+  //   option.style.display = 'none';
+  //   roomInput.style.visibility = 'visible';
+  // }
+  //
+  // changeCamera() {
+  //   var closeC = document.getElementById('close');
+  //   if (closeC.innerText === '关闭摄像头') {
+  //     this.message.create('success', `成功关闭摄像头`);
+  //     this.rtc.localMediaStream.getTracks()[1].stop();
+  //     closeC.innerText = '打开摄像头';
+  //   } else {
+  //     this.message.create('success', `成功打开摄像头`);
+  //     closeC.innerText = '关闭摄像头';
+  //     this.rtc.socket.close();
+  //     this.createVideo(this.roomID, 2);
+  //   }
+  // }
 
   // 新手引导
   handleHelpOk() {
