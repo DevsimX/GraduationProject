@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import {Component, Inject, NgZone, OnInit} from '@angular/core';
 
 import { blockly_options } from 'src/assets/blockly/blockly_options.js';
 
@@ -153,6 +153,7 @@ export class BlocklyComponent implements OnInit {
     private message: NzMessageService,
     private notification: NzNotificationService,
     private modal: NzModalService,
+    private zone : NgZone,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
   ) {
   }
@@ -321,11 +322,11 @@ export class BlocklyComponent implements OnInit {
 
     //接收到文字信息
     rtc.on('data_channel_message', function ( name,time, message) {
-      that.webrtcControl.chatHistory.push({
+      that.zone.run(()=>that.webrtcControl.chatHistory.push({
         name: name,
         time: time,
         message: message
-      })
+      }))
       that.webrtcControl.unreadChatNum++;
     });
 
@@ -1213,6 +1214,10 @@ export class BlocklyComponent implements OnInit {
         {nzDuration: this.errorDuration}
       )
     }
+  }
+
+  videoError(){
+
   }
   // // 视频流相关
   // videoError(){
