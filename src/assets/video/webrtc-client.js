@@ -1,3 +1,5 @@
+import {user} from "blockly";
+
 export var SkyRTC = function () {
 
     //创建本地流
@@ -133,6 +135,8 @@ export var SkyRTC = function () {
         this.connections = [];
         //保存所有与本地连接的socket的name
         this.names = {};
+      //保存所有与本地连接的socket的username
+        this.usernames = {};
         //初始时需要构建链接的数目
         this.numStreams = 0;
         //初始时已经连接的数目
@@ -235,9 +239,10 @@ export var SkyRTC = function () {
         var that = this;
         that.connections = data.connections;
         that.names = data.names;
+        that.usernames = data.usernames;
         that.me = data.you;
         that.createPeerConnections();
-        that.emit('connected',data.names);
+        that.emit('connected',data.names,data.usernames);
     }
 
     skyrtc.prototype.handle_ice_candidateEvent = function(data){
@@ -254,11 +259,11 @@ export var SkyRTC = function () {
 
     //有新用户加入到房间中
     skyrtc.prototype.handle_new_peerEvent = function(data){
-      console.log("new man in")
         let that = this;
         that.connections.push(data.socketId);
         that.names[data.socketId] = data.name;
-        that.emit("new_client_joined",data.name);
+        that.usernames[data.socketId] = data.username;
+        that.emit("new_client_joined",data.name,data.username);
         that.createPeerConnection(data.socketId);
     }
 
@@ -267,6 +272,7 @@ export var SkyRTC = function () {
         let that = this;
         var sendId;
         let name = that.names[data.socketId];
+        let username = that.usernames[data.socketId];
         that.closePeerConnection(that.peerConnections[data.socketId]);
         for(let i =0; i < that.connections.length ; i++){
           if(that.connections[i] === data.socketId){
@@ -274,6 +280,7 @@ export var SkyRTC = function () {
           }
         }
         delete that.names[data.socketId]
+        delete that.usernames[data.socketId]
         delete that.peerConnections[data.socketId];
         delete that.dataChannels[data.socketId];
         for (sendId in that.fileChannels[data.socketId]) {
@@ -281,7 +288,7 @@ export var SkyRTC = function () {
                 data.socketId][sendId].file);
         }
         delete that.fileChannels[data.socketId];
-        that.emit("remove_peer_video", name);
+        that.emit("remove_peer_video", name, username);
     }
 
     //用户名重复
@@ -542,7 +549,7 @@ export var SkyRTC = function () {
         };
         //只要pc接收到了一个track就会调用这个函数，但往往一个通信过程会发送两个track过来
         pc.ontrack = function (evt) {
-            that.emit('pc_add_track', evt.track, that.names[socketId], pc);
+            that.emit('pc_add_track', evt.track, that.usernames[socketId], pc);
         };
 
         pc.ondatachannel = function (evt) {

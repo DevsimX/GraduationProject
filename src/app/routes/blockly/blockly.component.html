@@ -210,20 +210,23 @@
 
       <div
         style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 500px;margin-top: 50px;">
-        <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}" style="width:100%;height: 100%" nzTitle="所有人的摄像头" [nzExtra]="extraTemplate">
-          <nz-tabset nzTabPosition="top" [(nzSelectedIndex)]="webrtcControl.currentDisplayMediaStreamIndex">
-            <nz-tab
-              *ngFor="let mediaStream of webrtcControl.mediaStreams"
-              [nzTitle]="mediaStream.name"
-            >
-              <video controls="controls" [volume]="webrtcControl.currentDisplayMediaStreamIndex === 0 ? 0.0 : 1.0" [srcObject]="webrtcControl.mediaStreams[webrtcControl.currentDisplayMediaStreamIndex].stream" autoplay width="400px"></video>
-            </nz-tab>
-          </nz-tabset>
+        <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}" style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
+          <video controls="controls" [volume]="0.0"
+                 [srcObject]="webrtcControl.mediaStreams[0].stream" autoplay width="350px"></video>
         </nz-card>
+        <nz-drawer
+          [nzHeight]="320"
+          [nzClosable]="true"
+          [nzVisible]="webrtcControl.roomCamerasVisible"
+          nzPlacement="bottom"
+          nzMask="false"
+          (nzOnClose)="closeCameras()"
+        >
+          <video *ngFor="let media of webrtcControl.mediaStreams.slice(1)" controls="controls"
+                 [srcObject]="media.stream" autoplay width="350px"></video>
+        </nz-drawer>
         <ng-template #extraTemplate>
-          <nz-select style="width: 150px" nzShowSearch nzPlaceHolder="选择某个人的摄像头" [(ngModel)]="webrtcControl.currentDisplayMediaStreamIndex">
-            <nz-option *ngFor="let mediaStream of webrtcControl.mediaStreams,let i = index" [nzLabel]="mediaStream.name" [nzValue]="i"></nz-option>
-          </nz-select>
+          <button [disabled]="!webrtcControl.connected" style="width: 160px" nz-button nzType="primary" (click)="openCameras()">查看所有人的摄像头</button>
         </ng-template>
 <!--        <div id="videos" style="height: 500px;">-->
 <!--          <video [srcObject]="webrtcControl.localMediaStream" id="me" autoplay width="400px"></video>-->

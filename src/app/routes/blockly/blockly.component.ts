@@ -56,7 +56,7 @@ interface webrtcControl {
   roomID?: number,//所在的房间号
   rtc?: any,//webrtc-client对象实体
   localMediaStream?: object//本地的流媒体
-  mediaStreams?: any[],//所有需要展示的流媒体，数组，格式：name，stream
+  mediaStreams?: any[],//所有需要展示的流媒体，数组，格式：name，stream,username
   currentDisplayMediaStreamIndex?: number,//当前展示的流媒体的索引
   videoControl?: string,//控制自己的摄像头权限,open or close
   audioControl?: string,//控制自己的音频权限,open or close
@@ -66,7 +66,7 @@ interface webrtcControl {
   chatMessage?: string,//发送给别人的聊天信息
   fileList?: any[],//文件上传的数组
   sharing?: boolean,//分享文件的状态
-
+  roomCamerasVisible?: boolean,//群体摄像头所在的抽屉的开关
 }
 @Component({
   selector: 'app-blockly',
@@ -93,6 +93,7 @@ export class BlocklyComponent implements OnInit {
     chatMessage: '',
     fileList : [],
     sharing : false,
+    roomCamerasVisible: false,
   }
   tabs = [];
   chatRoomVisible = false;//聊天室抽屉的显示与否
@@ -212,17 +213,24 @@ export class BlocklyComponent implements OnInit {
     });
   }
 
+  // fuckfuck(id): void{
+  //   videojs(id, {}, function() {
+  //     this.posterImage.off(['click', 'tap']);
+  //   });
+  // }
+
   webrtcInit(): void{
     let that = this;
     let rtc = that.webrtcControl.rtc;
     let notification = that.notification;
     let message = that.message;
     //成功创建WebSocket连接
-    rtc.on("connected", function (names) {
+    rtc.on("connected", function (names,usernames) {
       that.webrtcControl.inputRoomIDString = '';
       for(let index in names){
         that.webrtcControl.mediaStreams.push({
           name: names[index],
+          username: usernames[index],
           stream: new MediaStream(),
         })
       }
@@ -245,6 +253,7 @@ export class BlocklyComponent implements OnInit {
       rtc.changeAudioTrackMuted(false);
       that.webrtcControl.mediaStreams.splice(0,0,{
         name: '我',
+        username: that.tokenService.get().username,
         stream: stream,
       })
       that.webrtcControl.currentDisplayMediaStreamIndex = 0;
@@ -274,9 +283,9 @@ export class BlocklyComponent implements OnInit {
     });
 
     //删除其他用户
-    rtc.on('remove_peer_video', function (name) {
+    rtc.on('remove_peer_video', function (name,username) {
       for(let i = 0 ; i < that.webrtcControl.mediaStreams.length; i++){
-        if(name === that.webrtcControl.mediaStreams[i].name){
+        if(username === that.webrtcControl.mediaStreams[i].username){
           that.webrtcControl.mediaStreams.splice(i,1);
           break;
         }
@@ -287,8 +296,8 @@ export class BlocklyComponent implements OnInit {
     });
 
     //接收到其他用户的视频流
-    rtc.on('pc_add_track', function (track, name) {
-      let stream = <MediaStream> that.findStreamByName(name);
+    rtc.on('pc_add_track', function (track, username) {
+      let stream = <MediaStream> that.findStreamByUsername(username);
       if(track.kind === 'video'){
         if(stream.getVideoTracks().length !== 0){
           stream.removeTrack(stream.getVideoTracks()[0]);
@@ -307,9 +316,10 @@ export class BlocklyComponent implements OnInit {
     });
 
     //当房间中有新用户加入时
-    rtc.on('new_client_joined',function (name){
+    rtc.on('new_client_joined',function (name,username){
       that.webrtcControl.mediaStreams.push({
         name:name,
+        username: username,
         stream: new MediaStream(),
       })
       message.success(name+'加入到了房间中',{nzDuration: that.successDuration})
@@ -410,6 +420,14 @@ export class BlocklyComponent implements OnInit {
   closeChatRoom(): void{
     this.chatRoomVisible = false;
     this.webrtcControl.unreadChatNum = 0;
+  }
+
+  openCameras(): void{
+    this.webrtcControl.roomCamerasVisible = true;
+  }
+
+  closeCameras():void{
+    this.webrtcControl.roomCamerasVisible = false;
   }
 
   beforeUpload = (file: UploadFile): boolean => {
@@ -1101,7 +1119,7 @@ export class BlocklyComponent implements OnInit {
       this.webrtcControl.rtc.connect(
         "wss://www.xytcloud.ltd:4433/xyt",
         this.webrtcControl.roomID,
-        this.tokenService.get().username+Math.ceil(Math.random()*100),
+        this.tokenService.get().username,
         this.tokenService.get().name,
         )
     }
@@ -1118,10 +1136,10 @@ export class BlocklyComponent implements OnInit {
     return false;
   }
 
-  findStreamByName(name): object{
+  findStreamByUsername(username): object{
     let that = this;
     for(let item of that.webrtcControl.mediaStreams){
-      if(item.name === name){
+      if(item.username === username){
         return item.stream;
       }
     }
@@ -1198,13 +1216,13 @@ export class BlocklyComponent implements OnInit {
     if(operation === 'close'){
       rtc.changeAudioTrackMuted(false);
       this.message.success(
-        '音频已打开',
+        '音频已关闭',
         {nzDuration: this.successDuration}
       )
     }else if(operation === 'open'){
       rtc.changeAudioTrackMuted(true);
       this.message.success(
-        '音频已关闭',
+        '音频已打开',
         {nzDuration: this.successDuration}
       )
     }else {
