@@ -165,13 +165,6 @@ export class BlocklyComponent implements OnInit {
     let that = this;
     this.webrtcInit();
     this.initCanvas();
-    for (let i = 0; i < 30; i++) {
-      this.tabs.push({
-        name: `Tab ${i}`,
-        disabled: i === 28,
-        content: `Content of tab ${i}`
-      });
-    }
     // 先获得场景编号，然后根据当前的模式判断应该执行的内容
     this.route.params.subscribe(function(data) {
       that.sceneID = data.id;
@@ -212,12 +205,6 @@ export class BlocklyComponent implements OnInit {
       });
     });
   }
-
-  // fuckfuck(id): void{
-  //   videojs(id, {}, function() {
-  //     this.posterImage.off(['click', 'tap']);
-  //   });
-  // }
 
   webrtcInit(): void{
     let that = this;
@@ -1115,7 +1102,6 @@ export class BlocklyComponent implements OnInit {
   /**************webrtc部分****************/
   connect(): void{
     if(this.checkInputRoomID(this.webrtcControl.inputRoomIDString)){
-      // console.log(this.tokenService.get())
       this.webrtcControl.rtc.connect(
         "wss://www.xytcloud.ltd:4433/xyt",
         this.webrtcControl.roomID,
@@ -1237,154 +1223,6 @@ export class BlocklyComponent implements OnInit {
   videoError(){
 
   }
-  // // 视频流相关
-  // videoError(){
-  //   this.notification.success('引导', '3s后将打开引导修正界面');
-  //   setTimeout(function() {
-  //     window.open('https://49.233.221.184:9000/')
-  //   },3000);
-  // }
-  //
-  // createVideo(roomId, opt): void {
-  //   var roomDIV = document.getElementById('room');
-  //   var option = document.getElementById('option');
-  //   var videos = document.getElementById('videos');
-  //   var roomInput = document.getElementById('inputRoom');
-  //   var rtc = this.rtc = SkyRTC() as SkyRTCType;
-  //   var ready = false;
-  //   let that = this;
-  //   function createSteam(video, audio) {
-  //     //创建本地视频流
-  //     rtc.createStream({
-  //       'video': video,
-  //       'audio': audio,
-  //     });
-  //   }
-  //   function check() {
-  //     var res;
-  //     if (opt === 0) {
-  //       res = rtc.connections.length === 0;
-  //       if (res) {
-  //         that.message.create('success', `成功创建房间`);
-  //         return true;
-  //       } else {
-  //         that.message.create('error', `该房间已存在`);
-  //       }
-  //     } else if (opt === 1) {
-  //       res = rtc.connections.length > 0;
-  //       if (res) {
-  //         that.message.create('success', `成功加入房间`);
-  //         return true;
-  //       } else {
-  //         that.message.create('error', `该房间不存在`);
-  //       }
-  //     } else if (opt === 2) return true;
-  //     return false;
-  //   }
-  //
-  //   //成功创建WebSocket连接
-  //   rtc.on('connected', function(socket) {
-  //     ready = check();
-  //     if (ready) {
-  //       createSteam(true, true);
-  //       roomDIV.style.display = 'none';
-  //       option.style.display = 'block';
-  //       roomInput.style.visibility = 'hidden';
-  //     } else rtc.socket.close();
-  //   });
-  //   //创建本地视频流成功
-  //   rtc.on('stream_created', function(stream) {
-  //     var me = document.getElementById('me') as HTMLVideoElement;
-  //     try {
-  //       me.src = URL.createObjectURL(stream);
-  //     } catch (e) {
-  //       me.srcObject = stream;
-  //     }
-  //     me.play();
-  //   });
-  //   //创建本地视频流失败
-  //   rtc.on('stream_create_error', function(e) {
-  //     that.notification.error('错误', '视频通话建立失败，3s后将打开引导修正界面');
-  //     setTimeout(function() {
-  //       window.open('https://49.233.221.184:9000/')
-  //     },3000);
-  //   });
-  //   //接收到其他用户的视频流
-  //   rtc.on('pc_add_stream', function(stream, socketId) {
-  //     var newVideo = document.createElement('video'),
-  //       id = 'other-' + socketId;
-  //     newVideo.setAttribute('class', 'other');
-  //     newVideo.setAttribute('autoplay', 'autoplay');
-  //     newVideo.setAttribute('id', id);
-  //     newVideo.setAttribute('width','370px');
-  //     newVideo.setAttribute('style','margin: 9px 14px;');
-  //     videos.appendChild(newVideo);
-  //     rtc.attachStream(stream, id);
-  //   });
-  //   //删除其他用户
-  //   rtc.on('remove_peer', function(socketId) {
-  //     var video = document.getElementById('other-' + socketId);
-  //     if (video) {
-  //       video.parentNode.removeChild(video);
-  //     }
-  //   });
-  //
-  //   //连接WebSocket服务器
-  //   var protocolStr = document.location.protocol;
-  //   var room = roomId;
-  //   let ws = '49.233.221.184:3000';
-  //   let wss = '49.233.221.184:9000';
-  //   if (protocolStr === 'http:') {
-  //     rtc.connect('ws:' + ws, room);
-  //   } else if (protocolStr === 'https:') {
-  //     rtc.connect('wss:' + wss, room);
-  //   } else {
-  //     alert('请访问https服务');
-  //   }
-  // }
-  //
-  // createRoom(): void {
-  //   if(!this.roomID.trim()){
-  //     this.message.create('warning', `请输入房间号`);
-  //     return;
-  //   }
-  //   this.createVideo(this.roomID, 0);
-  // }
-  //
-  // joinRoom(): void {
-  //   if(!this.roomID.trim()){
-  //     this.message.create('warning', `请输入房间号`);
-  //     return;
-  //   }
-  //   this.createVideo(this.roomID, 1);
-  // }
-  //
-  // quitRoom() {
-  //   var roomDIV = document.getElementById('room');
-  //   var option = document.getElementById('option');
-  //   var roomInput = document.getElementById('inputRoom');
-  //   if (this.rtc.socket)
-  //     this.rtc.socket.close();
-  //   var videos = document.getElementById('videos');
-  //   videos.innerHTML = '<video id="me" autoplay width="370px" style="margin: 14px 14px 0 14px;"></video>';
-  //   roomDIV.style.display = 'block';
-  //   option.style.display = 'none';
-  //   roomInput.style.visibility = 'visible';
-  // }
-  //
-  // changeCamera() {
-  //   var closeC = document.getElementById('close');
-  //   if (closeC.innerText === '关闭摄像头') {
-  //     this.message.create('success', `成功关闭摄像头`);
-  //     this.rtc.localMediaStream.getTracks()[1].stop();
-  //     closeC.innerText = '打开摄像头';
-  //   } else {
-  //     this.message.create('success', `成功打开摄像头`);
-  //     closeC.innerText = '关闭摄像头';
-  //     this.rtc.socket.close();
-  //     this.createVideo(this.roomID, 2);
-  //   }
-  // }
 
   // 新手引导
   handleHelpOk() {

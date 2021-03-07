@@ -211,7 +211,7 @@
       <div
         style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 500px;margin-top: 50px;">
         <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}" style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
-          <video controls="controls" [volume]="0.0"
+          <video controls="controls" [volume]="0.0" *ngIf="webrtcControl.mediaStreams.length > 0"
                  [srcObject]="webrtcControl.mediaStreams[0].stream" autoplay width="350px"></video>
         </nz-card>
         <nz-drawer
@@ -223,6 +223,7 @@
           (nzOnClose)="closeCameras()"
         >
           <video *ngFor="let media of webrtcControl.mediaStreams.slice(1)" controls="controls"
+                 [volume]="1.0"
                  [srcObject]="media.stream" autoplay width="350px"></video>
         </nz-drawer>
         <ng-template #extraTemplate>
