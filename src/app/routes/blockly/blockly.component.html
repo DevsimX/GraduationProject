@@ -8,13 +8,12 @@
   <p>确认提交</p>
 </nz-modal>
 
-<div style="height: 110%;min-height: 1000px; width: 100%;background-color: hsla(215, 100%, 95%, 1);padding-bottom: 30px">
+<div style="height: 110%;min-height: 1000px; width: 100%;min-width:1400px;background-color: hsla(215, 100%, 95%, 1);padding-bottom: 30px">
 
   <div style="height: 100%;width: calc(100% - 1140px);display: inline-block;">
     <div style="width: 100%;height: 100%;padding: 20px 0 0 20px;">
       <div id="blocklyDiv"
            style="width: 100%; height: 100%;min-height: 800px;border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
-
       </div>
     </div>
   </div>
@@ -76,11 +75,11 @@
     <div style="padding: 20px 20px 0 20px;height: 100%;">
 
       <div style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;
-      height: calc(100% - 550px);min-height:388px;padding: 20px 20px;text-align: center">
+      height: calc(100% - 500px);min-height:438px;padding: 20px 20px;text-align: center">
         <h1>热线求助</h1>
         <p style="text-indent: 2em;text-align: left">
           如果您在学习过程中遇到了困难，您可以通过视频连线的方式向其他同学或老师寻求帮助。房间的使用采用的是即时建立的方式。你只需要<strong>输入房间号，点击加入房间即可</strong>。
-          输入的房间号如果已经存在就加入，否则就创建房间。<a (click)="videoError()">发生错误请点击我</a>。
+          输入的房间号如果已经存在就加入，否则就创建房间。<span nz-text ><mark>如果打开音频后麦克风没有声音，请检查浏览器的麦克风权限是否以及开启以及本机麦克风是否可用。</mark></span>
         </p>
         <div style="margin-top: 20px;" nz-row [nzGutter]="16">
           <div nz-col class="gutter-row" [nzSpan]="16">
@@ -209,22 +208,23 @@
       </div>
 
       <div
-        style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 500px;margin-top: 50px;">
+        style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 450px;margin-top: 50px;">
         <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}" style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
           <video controls="controls" [volume]="0.0" *ngIf="webrtcControl.mediaStreams.length > 0"
                  [srcObject]="webrtcControl.mediaStreams[0].stream" autoplay width="350px"></video>
         </nz-card>
         <nz-drawer
-          [nzHeight]="320"
+          [nzHeight]="440"
           [nzClosable]="true"
           [nzVisible]="webrtcControl.roomCamerasVisible"
           nzPlacement="bottom"
           nzMask="false"
           (nzOnClose)="closeCameras()"
         >
-          <video *ngFor="let media of webrtcControl.mediaStreams.slice(1)" controls="controls"
-                 [volume]="1.0"
-                 [srcObject]="media.stream" autoplay width="350px"></video>
+          <nz-card style="max-width: 400px;display: inline-block;margin-right: 60px;text-align: center;" *ngFor="let media of webrtcControl.mediaStreams.slice(1)" [nzTitle]="media.name+'的摄像头'">
+            <video  controls="controls"
+                   [srcObject]="media.stream" autoplay width="350px"></video>
+          </nz-card>
         </nz-drawer>
         <ng-template #extraTemplate>
           <button [disabled]="!webrtcControl.connected" style="width: 160px" nz-button nzType="primary" (click)="openCameras()">查看所有人的摄像头</button>

@@ -292,13 +292,13 @@ export class BlocklyComponent implements OnInit {
         }else
           stream.addTrack(track);
       }else if(track.kind === 'audio'){
-        if(stream.getAudioTracks().length !== 0 && track.kind === 'audio'){
+        if(stream.getAudioTracks().length !== 0){
           stream.removeTrack(stream.getAudioTracks()[0]);
           stream.addTrack(track);
         }else
           stream.addTrack(track)
       }else {
-        notification.error('视频流轨道存在问题','错误代码044',{nzDuration: that.errorDuration});
+        notification.error('流轨道存在问题','错误代码044',{nzDuration: that.errorDuration});
       }
     });
 
