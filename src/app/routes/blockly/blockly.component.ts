@@ -432,7 +432,9 @@ export class BlocklyComponent implements OnInit {
       if(baseUrl !== '#'){
         baseUrl = '';
       }
-      window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
+      let temp = window.open('_blank');
+      temp.location.href=baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername;
+      // window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
     });
 
     //连接请求确认
