@@ -23,6 +23,7 @@ import { CreateComponent } from './create/create.component';
 import { AssessmentSuccessComponent} from './assessment/assessmentSucess/assessmentSuccess.component';
 import {AllSceneComponent} from './allScene/allScene.component';
 
+import {RemoteControlComponent} from "./remoteControl/remoteControl.component";
 
 const COMPONENTS = [
   DashboardComponent,
@@ -52,7 +53,9 @@ const COMPONENTS_NOROUNT = [];
 
     CreateComponent,
     AssessmentSuccessComponent,
-    AllSceneComponent
+    AllSceneComponent,
+
+    RemoteControlComponent,
   ],
   entryComponents: COMPONENTS_NOROUNT
 })

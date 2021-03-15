@@ -11,6 +11,7 @@ import { NzMessageService, NzNotificationService } from 'ng-zorro-antd';
 import { UploadFile } from 'ng-zorro-antd/upload';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
 import {NzModalService} from "ng-zorro-antd/modal";
+import * as $ from 'jquery';
 
 declare var Blockly: any;
 declare var interpreter: any;
@@ -67,6 +68,7 @@ interface webrtcControl {
   fileList?: any[],//文件上传的数组
   sharing?: boolean,//分享文件的状态
   roomCamerasVisible?: boolean,//群体摄像头所在的抽屉的开关
+  remoteControlUsername?: string,//远程连接的用户的用户名
 }
 @Component({
   selector: 'app-blockly',
@@ -94,6 +96,7 @@ export class BlocklyComponent implements OnInit {
     fileList : [],
     sharing : false,
     roomCamerasVisible: false,
+    remoteControlUsername: undefined,
   }
   tabs = [];
   chatRoomVisible = false;//聊天室抽屉的显示与否
@@ -161,6 +164,23 @@ export class BlocklyComponent implements OnInit {
 
 
   ngOnInit(): void {
+    // let abc = {controller:'abc',controlled:'abc'}
+    // $.ajax({
+    //   type: "POST",
+    //   url: 'https://xytcloud.ltd:8001/remoteControl/',
+    //   data: abc,
+    //   // success: function (data) {
+    //   //   if (data.msg === 'ok'){
+    //   //     console.log("yes");
+    //   //     r.navigateByUrl('/assessRlt', {});
+    //   //   }
+    //   //
+    //   //   else {
+    //   //     console.log('wrong');
+    //   //
+    //   //   }
+    //   // }
+    // });
     let crypto: cryptoType = new Crypto();
     let that = this;
     this.webrtcInit();
@@ -397,6 +417,42 @@ export class BlocklyComponent implements OnInit {
     rtc.on('receive_file_error', function (error) {
       console.log(error);
     });
+
+    //远程连接失败
+    rtc.on('remote_control_fail', function (name,error) {
+      that.notification.error('和'+name+'建立远程控制失败',
+        error,{nzDuration: that.errorDuration})
+    });
+
+    //远程连接失败
+    rtc.on('remote_control_success', function (name,track) {
+      that.notification.success('和'+name+'建立远程控制成功',
+        "连接已建立",{nzDuration: that.successDuration});
+      let baseUrl = window.location.href.split('/')[3];
+      if(baseUrl !== '#'){
+        baseUrl = '';
+      }
+      window.open(baseUrl + "/remoteControl/controller="+that.webrtcControl.remoteControlUsername+"&controlled="+that.tokenService.get().username);
+    });
+
+    //连接请求确认
+    rtc.on('receive_remote_control_ask', function (name,username) {
+      that.modal.confirm({
+        nzTitle: '是否接收远程控制请求?',
+        nzContent: name+'请求控制您的屏幕',
+        nzOnOk: () =>{
+          that.webrtcControl.rtc.getDesktopTrack(username,that.tokenService.get().username);
+        },
+        nzOnCancel: () =>{
+          that.webrtcControl.rtc.handleRemoteControlRequest(username,that.tokenService.get().username,"refuse",null,'目标用户拒绝了你的远程控制连接请求');
+        }
+      })
+    });
+
+    //错误的信息提示
+    rtc.on('error',function (error){
+      that.notification.error('错误',error,{nzDuration:that.errorDuration});
+    });
   }
 
   openChatRoom(): void{
@@ -500,6 +556,13 @@ export class BlocklyComponent implements OnInit {
       }
     }else
       this.message.error('非pc端不可使用共享屏幕',{nzDuration: this.errorDuration})
+  }
+
+  remoteControlStart(event): void{
+    let that = this;
+    let controlledUsername = event[0];
+    let myUsername = this.tokenService.get().username;
+    that.webrtcControl.rtc.askRemoteControl(controlledUsername,myUsername);
   }
 
   setTitle(str) {

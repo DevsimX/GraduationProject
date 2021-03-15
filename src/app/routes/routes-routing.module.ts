@@ -27,6 +27,8 @@ import { AssessmentComponent } from './assessment/assessment.component';
 import { CreateComponent } from './create/create.component';
 import { AssessmentSuccessComponent } from './assessment/assessmentSucess/assessmentSuccess.component';
 import { AllSceneComponent } from './allScene/allScene.component';
+import {RemoteControlComponent} from "./remoteControl/remoteControl.component";
+import {RemoteControlGuard} from "../auth/remoteControl.guard";
 
 
 const routes: Routes = [
@@ -56,6 +58,13 @@ const routes: Routes = [
     children: [
       { path: 'blockly/:id', component: BlocklyComponent, data: { title: '工作区' } },
     ],
+  },
+  //远程控制页面
+  {
+    path: 'remoteControl/controller=:controller&controlled=:controlled',
+    canActivate:[RemoteControlGuard],
+    component: RemoteControlComponent,
+    data: {title: '视频通话区'},
   },
   // passport
   {
