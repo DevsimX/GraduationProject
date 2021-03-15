@@ -61,7 +61,7 @@ const routes: Routes = [
   },
   //远程控制页面
   {
-    path: 'remoteControl/controller=:controller&controlled=:controlled',
+    path: 'remoteControl',
     canActivate:[RemoteControlGuard],
     component: RemoteControlComponent,
     data: {title: '视频通话区'},
