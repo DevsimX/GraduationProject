@@ -424,7 +424,7 @@ export class BlocklyComponent implements OnInit {
         error,{nzDuration: that.errorDuration})
     });
 
-    //远程连接失败
+    //远程连接成功
     rtc.on('remote_control_success', function (name,track) {
       that.notification.success('和'+name+'建立远程控制成功',
         "连接已建立",{nzDuration: that.successDuration});
@@ -432,7 +432,7 @@ export class BlocklyComponent implements OnInit {
       if(baseUrl !== '#'){
         baseUrl = '';
       }
-      window.open(baseUrl + "/remoteControl/controller="+that.webrtcControl.remoteControlUsername+"&controlled="+that.tokenService.get().username);
+      window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
     });
 
     //连接请求确认
