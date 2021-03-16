@@ -28,6 +28,31 @@ export class RemoteControlComponent implements OnInit {
   ) {
   }
 
+  stringToFunction(obj){  // 将对象中的函数字符串转化为函数
+    var regex =  /^((function\s)|.)([a-zA-Z_][a-zA-Z0-9_]*)\(.*\)\s\{.*\}/  //匹配函数字符串
+    for(let key in obj){
+      if(obj[key] instanceof Object){
+        this.stringToFunction(obj[key]);
+      }else{
+        if(regex.test(obj[key])){ // 是一个函数
+          try{
+            let params = obj[key].substring(obj[key].indexOf('(')+1,obj[key].indexOf(')'));
+            let operation = obj[key].substring(obj[key].indexOf("{")+1,obj[key].length-1);
+            obj[key] = new Function(params, operation);
+          }catch(e){
+            console.log(e)
+          }
+        }
+      }
+    }
+    return obj
+  }
+
+  stringToObject(string){  // 用于替代JSON.parse
+    let obj = JSON.parse(string);  //将字符串转为对象
+    return this.stringToFunction(obj)    // 将对象中的函数字符串转为函数
+  }
+
   ngOnInit(): void {
     let that = this;
     that.route.queryParams.subscribe((query) => {
@@ -41,10 +66,11 @@ export class RemoteControlComponent implements OnInit {
         async: false,
         success: function (data) {
           console.log(data)
-          that.track = data;
+          that.track = that.stringToObject(data);
         },
       });
       that.videoStream.addTrack(that.track);
     });
   }
+
 }

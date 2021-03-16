@@ -164,23 +164,6 @@ export class BlocklyComponent implements OnInit {
 
 
   ngOnInit(): void {
-    // let abc = {controller:'abc',controlled:'abc'}
-    // $.ajax({
-    //   type: "POST",
-    //   url: 'https://xytcloud.ltd:8001/remoteControl/',
-    //   data: abc,
-    //   // success: function (data) {
-    //   //   if (data.msg === 'ok'){
-    //   //     console.log("yes");
-    //   //     r.navigateByUrl('/assessRlt', {});
-    //   //   }
-    //   //
-    //   //   else {
-    //   //     console.log('wrong');
-    //   //
-    //   //   }
-    //   // }
-    // });
     let crypto: cryptoType = new Crypto();
     let that = this;
     this.webrtcInit();

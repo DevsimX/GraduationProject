@@ -51,6 +51,26 @@ export var SkyRTC = function () {
     console.trace("[" + time.toLocaleTimeString() + "] " + text);
   }
 
+  // 返回一个将对象中的函数都转化为字符串的对象　不直接在原对象上面改
+  function stringifyFunction(obj){
+    let newobj = JSON.parse(JSON.stringify(obj))
+    for(let key in obj){
+      if(obj[key] instanceof Function){
+        newobj[key] = obj[key].toString().replace(/[\n\t]/g,"");
+        continue;
+      }
+      if(obj[key] instanceof Object){
+        newobj[key] = stringifyFunction(obj[key]);
+      }
+    }
+    return newobj;
+  }
+
+  function objectToString(obj){  // 用于替代JSON.stringify函数
+    let _object = stringifyFunction(obj);  // 将对象中的函数转为字符串
+    return JSON.stringify(_object)  // 将对象转为字符串
+  }
+
   // Handles reporting errors. Currently, we just dump stuff to console but
   // in a real-world application, an appropriate (and user-friendly)
   // error message should be displayed.
@@ -214,7 +234,7 @@ export var SkyRTC = function () {
           that.handle_remoteControlSuccessEvent(data);
           break;
         case "_receiveRemoteControlAsk":
-          that.emit('receive_remote_control_ask',data.name,data.username);
+          that.emit('receive_remote_control_ask', data.name, data.username);
           break;
         default:
           that.emit("socket_receive_message", socket, json);
@@ -312,19 +332,19 @@ export var SkyRTC = function () {
   //远程连接请求失败
   skyrtc.prototype.handle_remoteControlFailEvent = function (data) {
     let that = this;
-    that.emit("remote_control_fail",data.name,data.error);
+    that.emit("remote_control_fail", data.name, data.error);
   }
 
   //远程连接请求成功
   skyrtc.prototype.handle_remoteControlSuccessEvent = function (data) {
     let that = this;
-    that.emit("remote_control_success",data.name,data.track);
+    that.emit("remote_control_success", data.name, data.track);
   }
 
   //收到远程控制的连接请求
   skyrtc.prototype.handle_receiveRemoteControlAskEvent = function (data) {
     let that = this;
-    that.emit("receive_remote_control_ask",data.name,data.username);
+    that.emit("receive_remote_control_ask", data.name, data.username);
   }
 
   //接收offer
@@ -385,14 +405,14 @@ export var SkyRTC = function () {
   };
 
   //远程控制连接请求的处理
-  skyrtc.prototype.handleRemoteControlRequest = function (controllerUsername,controlledUsername,state,track,info) {
+  skyrtc.prototype.handleRemoteControlRequest = function (controllerUsername, controlledUsername, state, track, info) {
     let that = this;
     that.socket.send(JSON.stringify({
       "eventName": "__remoteControlRespond",
       "data": {
         "controller": controllerUsername,
         "controlled": controlledUsername,
-        "track": track,
+        "track": objectToString(track),
         "state": state,
         "info": info,
       }
@@ -400,16 +420,18 @@ export var SkyRTC = function () {
   }
 
   //远程控制连接请求的处理
-  skyrtc.prototype.getDesktopTrack = function (controllerUsername,controlledUsername) {
+  skyrtc.prototype.getDesktopTrack = function (controllerUsername, controlledUsername) {
     let that = this;
-    navigator.mediaDevices.getDisplayMedia({video: true, audio: false})
+    navigator.mediaDevices.getDisplayMedia({
+      video: true, audio: false
+    })
       .then(function (stream) {
         let track = stream.getVideoTracks()[0];
-        that.handleRemoteControlRequest(controllerUsername,controlledUsername,"accept",track,null);
+        that.handleRemoteControlRequest(controllerUsername, controlledUsername, "accept", track, null);
       })
       .catch(function (error) {
-        that.emit("error",error);
-        that.handleRemoteControlRequest(controllerUsername,controlledUsername,"refuse",null,"目标用户无法与你建立远程连接");
+        that.emit("error", error);
+        that.handleRemoteControlRequest(controllerUsername, controlledUsername, "refuse", null, "目标用户无法与你建立远程连接");
       });
   }
 

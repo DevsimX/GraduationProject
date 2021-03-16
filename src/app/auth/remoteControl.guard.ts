@@ -17,7 +17,6 @@ export class RemoteControlGuard implements CanActivate, CanActivateChild, CanLoa
 
       if(controller&& controlled){
         let res = false;
-        let d;
         $.ajax({
           type: "POST",
           url: 'https://xytcloud.ltd:8001/remoteControl/',
@@ -25,11 +24,8 @@ export class RemoteControlGuard implements CanActivate, CanActivateChild, CanLoa
           async: false,
           success: function (data) {
             res = data === 'ok';
-            d = data;
           },
         });
-        console.log(res)
-        console.log(d);
         return res;
       }else {
         return false;
