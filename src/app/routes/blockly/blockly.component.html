@@ -212,9 +212,9 @@
         padding: 20px 20px;text-align: center">
         <label style="font-size: 17px;margin-right: 20px;font-weight: bold">远程控制:</label>
         <nz-select [disabled]="!webrtcControl.connected" style="width: 250px" nzShowSearch
-                   nzPlaceHolder="选择你想远程控制的用户" [(ngModel)]="webrtcControl.remoteControlUsername"
+                   nzPlaceHolder="选择你想远程控制的用户" [(ngModel)]="webrtcControl.remoteControlSocketId"
                    (ngModelChange)="remoteControlStart([$event])">
-          <nz-option *ngFor="let mediaStream of webrtcControl.mediaStreams.slice(1)" [nzLabel]="mediaStream.name" [nzValue]="mediaStream.username"></nz-option>
+          <nz-option *ngFor="let mediaStream of webrtcControl.mediaStreams.slice(1)" [nzLabel]="mediaStream.name" [nzValue]="mediaStream.socketId"></nz-option>
         </nz-select>
       </div>
 

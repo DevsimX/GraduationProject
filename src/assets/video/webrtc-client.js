@@ -51,24 +51,14 @@ export var SkyRTC = function () {
     console.trace("[" + time.toLocaleTimeString() + "] " + text);
   }
 
-  // 返回一个将对象中的函数都转化为字符串的对象　不直接在原对象上面改
-  function stringifyFunction(obj){
-    let newobj = JSON.parse(JSON.stringify(obj))
-    for(let key in obj){
-      if(obj[key] instanceof Function){
-        newobj[key] = obj[key].toString().replace(/[\n\t]/g,"");
-        continue;
-      }
-      if(obj[key] instanceof Object){
-        newobj[key] = stringifyFunction(obj[key]);
-      }
-    }
-    return newobj;
-  }
-
-  function objectToString(obj){  // 用于替代JSON.stringify函数
-    let _object = stringifyFunction(obj);  // 将对象中的函数转为字符串
-    return JSON.stringify(_object)  // 将对象转为字符串
+  //neighbour对象，和用户相邻的client
+  function Neighbour(socketId, name, username, peerConnection, dataChannel, fileChannel) {
+    this.socketId = socketId;
+    this.name = name;
+    this.username = username;
+    this.peerConnection = peerConnection;
+    this.dataChannel = dataChannel;
+    this.fileChannel = fileChannel;
   }
 
   // Handles reporting errors. Currently, we just dump stuff to console but
@@ -145,11 +135,13 @@ export var SkyRTC = function () {
     //本地WebSocket连接
     this.socket = null;
     //本地socket的id，由后台服务器创建
-    this.me = null;
+    this.mySocketId = null;
     //用户名，用来唯一标识client
     this.username = null;
     //姓名，用于前端显示
     this.name = null;
+    //邻居的列表
+    this.neighbourList = [];
     //保存所有与本地相连的peer connection， 键为socket id，值为PeerConnection类型
     this.peerConnections = {};
     //保存所有与本地连接的socket的id
@@ -168,6 +160,8 @@ export var SkyRTC = function () {
     this.fileChannels = {};
     //保存所有接受到的文件
     this.receiveFiles = {};
+    //远程连接的信息，peerconnection，role，track，other socket id
+    this.remoteControlInfo = {};
   }
 
   //继承自事件处理器，提供绑定事件和触发事件的功能
@@ -234,7 +228,7 @@ export var SkyRTC = function () {
           that.handle_remoteControlSuccessEvent(data);
           break;
         case "_receiveRemoteControlAsk":
-          that.emit('receive_remote_control_ask', data.name, data.username);
+          that.handle_receiveRemoteControlAskEvent(data)
           break;
         default:
           that.emit("socket_receive_message", socket, json);
@@ -245,21 +239,47 @@ export var SkyRTC = function () {
       that.emit("socket_error", error, socket);
     };
 
-    socket.onclose = function (data) {
+    socket.onclose = function (event) {
       that.closeStream(that.localMediaStream);
-      var pcs = that.peerConnections;
-      for (let i = pcs.length; i >= 0; i--) {
-        that.closePeerConnection(pcs[i]);
+      for(let neighbour of that.neighbourList){
+        that.closePeerConnection(neighbour.peerConnection);
       }
-      that.peerConnections = [];
-      that.dataChannels = {};
-      that.fileChannels = {};
-      that.connections = [];
-      this.names = {}
+      that.neighbourList = [];
       that.fileData = {};
       that.socket = null;
     };
   };
+
+  //根据socketId查询内容
+  skyrtc.prototype.getInfoBySocketId = function (socketId,info) {
+    let that = this;
+    let res;
+    for(let neighbour of that.neighbourList){
+      if(socketId === neighbour.socketId){
+        res = neighbour;
+      }
+    }
+
+    switch (info) {
+      case 'name': return res.name;
+      case 'username': return res.username;
+      case 'peerConnection': return res.peerConnection;
+      case 'dataChannel': return res.dataChannel;
+      case 'fileChannel': return res.fileChannel;
+      case 'all': return res;
+      default: return null;
+    }
+  }
+
+  //根据socketId查询内容
+  skyrtc.prototype.deleteNeighbourBySocketId = function (socketId) {
+    let that = this;
+    for(let i = 0 ; i < that.neighbourList.length ; i++){
+      if(socketId === that.neighbourList[i].socketId){
+        that.neighbourList.splice(i,1);
+      }
+    }
+  }
 
 
   /*************************对服务器发送过来的消息进行处理的部分*******************************/
@@ -267,18 +287,26 @@ export var SkyRTC = function () {
   skyrtc.prototype.handle_peersEvent = function (data) {
     //获取所有服务器上的connections
     var that = this;
-    that.connections = data.connections;
-    that.names = data.names;
-    that.usernames = data.usernames;
-    that.me = data.you;
+    for (let i in data.clientsInfo) {
+      that.neighbourList.push(
+        new Neighbour(
+          i,
+          data.clientsInfo[i]['name'],
+          data.clientsInfo[i]['username'],
+          undefined,
+          undefined,
+          undefined,
+        ))
+    }
+    that.mySocketId = data.you;
     that.createPeerConnections();
-    that.emit('connected', data.names, data.usernames);
+    that.emit('connected', data.clientsInfo,data.you);
   }
 
   skyrtc.prototype.handle_ice_candidateEvent = function (data) {
     let that = this;
     var candidate = new nativeRTCIceCandidate(data);
-    var pc = that.peerConnections[data.socketId];
+    var pc = that.getInfoBySocketId(data.socketId,"peerConnection");
     if (!pc || !pc.remoteDescription || !pc.remoteDescription.type) {
       //push candidate onto queue...
       log("remote not set!")
@@ -290,10 +318,17 @@ export var SkyRTC = function () {
   //有新用户加入到房间中
   skyrtc.prototype.handle_new_peerEvent = function (data) {
     let that = this;
-    that.connections.push(data.socketId);
-    that.names[data.socketId] = data.name;
-    that.usernames[data.socketId] = data.username;
-    that.emit("new_client_joined", data.name, data.username);
+    that.neighbourList.push(
+      new Neighbour(
+        data.socketId,
+        data.name,
+        data.username,
+        undefined,
+        undefined,
+        undefined,
+      )
+    );
+    that.emit("new_client_joined", data.name, data.username,data.socketId);
     that.createPeerConnection(data.socketId);
   }
 
@@ -301,30 +336,20 @@ export var SkyRTC = function () {
   skyrtc.prototype.handle_remove_peerEvent = function (data) {
     let that = this;
     var sendId;
-    let name = that.names[data.socketId];
-    let username = that.usernames[data.socketId];
-    that.closePeerConnection(that.peerConnections[data.socketId]);
-    for (let i = 0; i < that.connections.length; i++) {
-      if (that.connections[i] === data.socketId) {
-        that.connections.splice(i, 1);
-      }
+    let client = that.getInfoBySocketId(data.socketId,"all");
+    let name = client.name;
+    let username = client.username;
+    that.closePeerConnection(client.peerConnection);
+    for (sendId in client.fileChannel) {
+      that.handle_send_file_errorEvent(new Error("Connection has been closed"), data.socketId, sendId, client.fileChannel[sendId].file);
     }
-    delete that.names[data.socketId]
-    delete that.usernames[data.socketId]
-    delete that.peerConnections[data.socketId];
-    delete that.dataChannels[data.socketId];
-    for (sendId in that.fileChannels[data.socketId]) {
-      that.handle_send_file_errorEvent(new Error("Connection has been closed"), data.socketId, sendId, that.fileChannels[
-        data.socketId][sendId].file);
-    }
-    delete that.fileChannels[data.socketId];
+    that.deleteNeighbourBySocketId(data.socketId);
     that.emit("remove_peer_video", name, username);
   }
 
   //用户名重复
   skyrtc.prototype.handle_repeatedNameEvent = function () {
     let that = this;
-    let socketId = that.socket.id;
     that.socket.close(1000, "因为用户名重复，因此关闭socket");
     that.emit("repeatedName");
   }
@@ -338,13 +363,13 @@ export var SkyRTC = function () {
   //远程连接请求成功
   skyrtc.prototype.handle_remoteControlSuccessEvent = function (data) {
     let that = this;
-    that.emit("remote_control_success", data.name, data.track);
+    that.emit("remote_control_success", data.name);
   }
 
   //收到远程控制的连接请求
   skyrtc.prototype.handle_receiveRemoteControlAskEvent = function (data) {
     let that = this;
-    that.emit("receive_remote_control_ask", data.name, data.username);
+    that.emit("receive_remote_control_ask", data.socketId,that.getInfoBySocketId(data.socketId,'name'));
   }
 
   //接收offer
@@ -365,11 +390,11 @@ export var SkyRTC = function () {
   skyrtc.prototype.handle_readyEvent = function () {
     let that = this;
     that.addDataChannels();
-    for (let item in that.peerConnections) {
+    for(let neighbour of that.neighbourList){
       if (that.localMediaStream !== null)
         that.localMediaStream
           .getTracks()
-          .forEach(track => that.peerConnections[item].addTrack(track));
+          .forEach(track => neighbour.peerConnection.addTrack(track));
     }
   }
 
@@ -386,33 +411,23 @@ export var SkyRTC = function () {
   }
 
   //与选中的用户进行连接请求
-  skyrtc.prototype.askRemoteControl = function (username, myUsername) {
+  skyrtc.prototype.askRemoteControl = function (controlledSocketId) {
     let that = this;
-    let socketId;
-    for (let i in that.usernames) {
-      if (that.usernames[i] === username) {
-        socketId = i;
-        break;
-      }
-    }
     that.socket.send(JSON.stringify({
       "eventName": "__remoteControlAsk",
       "data": {
-        "controller": myUsername,
-        "controlled": username,
+        "controlled": controlledSocketId,
       }
     }));
   };
 
   //远程控制连接请求的处理
-  skyrtc.prototype.handleRemoteControlRequest = function (controllerUsername, controlledUsername, state, track, info) {
+  skyrtc.prototype.handleRemoteControlRequest = function (controllerSocketId, state, info) {
     let that = this;
     that.socket.send(JSON.stringify({
       "eventName": "__remoteControlRespond",
       "data": {
-        "controller": controllerUsername,
-        "controlled": controlledUsername,
-        "track": objectToString(track),
+        "controller": controllerSocketId,
         "state": state,
         "info": info,
       }
@@ -420,18 +435,18 @@ export var SkyRTC = function () {
   }
 
   //远程控制连接请求的处理
-  skyrtc.prototype.getDesktopTrack = function (controllerUsername, controlledUsername) {
+  skyrtc.prototype.getDesktopTrack = function (controllerSocketId) {
     let that = this;
     navigator.mediaDevices.getDisplayMedia({
       video: true, audio: false
     })
       .then(function (stream) {
-        let track = stream.getVideoTracks()[0];
-        that.handleRemoteControlRequest(controllerUsername, controlledUsername, "accept", track, null);
+        //这里缺少内容，建立peerconnection
+        that.handleRemoteControlRequest(controllerSocketId, "accept", null);
       })
       .catch(function (error) {
         that.emit("error", error);
-        that.handleRemoteControlRequest(controllerUsername, controlledUsername, "refuse", null, "目标用户无法与你建立远程连接");
+        that.handleRemoteControlRequest(controllerSocketId, "refuse",  "目标用户无法与你建立远程连接");
       });
   }
 
@@ -459,11 +474,12 @@ export var SkyRTC = function () {
 
   function getDesktopStreamSuccessfully(stream) {
     dThat.emit("stream_reset", stream);
-    for (let item in dThat.peerConnections) {
-      let senders = dThat.peerConnections[item].getSenders();
-      senders.forEach(sender => dThat.peerConnections[item].removeTrack(sender));
+    for(let neighbour of dThat.neighbourList){
+      let pc = neighbour.peerConnection;
+      let senders = pc.getSenders();
+      senders.forEach(sender => pc.removeTrack(sender));
       stream.getTracks()
-        .forEach(track => dThat.peerConnections[item].addTrack(track));
+        .forEach(track => pc.addTrack(track));
     }
   }
 
@@ -501,17 +517,6 @@ export var SkyRTC = function () {
       gThat.emit("stream_create_error", error);
     }
   }
-
-  // 将流绑定到video标签上用于输出
-  skyrtc.prototype.attachStream = function (stream, domId) {
-    var element = document.getElementById(domId);
-    if (navigator.mediaDevices.getUserMedia) {
-      element.srcObject = stream;
-    } else {
-      element.src = webkitURL.createObjectURL(stream);
-    }
-    element.play();
-  };
 
 
   /*************************close部分*******************************/
@@ -555,24 +560,21 @@ export var SkyRTC = function () {
       pcCreateOfferErrorCb = function (error) {
         log(error);
       };
-    for (i = 0, m = this.connections.length; i < m; i++) {
-      pc = this.peerConnections[this.connections[i]];
-      pc.createOffer(pcCreateOfferCbGen(pc, this.connections[i]), pcCreateOfferErrorCb);
+    for(let neighbour of that.neighbourList){
+      neighbour.peerConnection.createOffer(pcCreateOfferCbGen(pc, neighbour.socketId), pcCreateOfferErrorCb);
     }
   };
 
   //接收到Offer类型信令后作为回应返回answer类型信令
   skyrtc.prototype.receiveOffer = function (socketId, sdp) {
     log("---> Receive offer")
-    if (document.getElementById("other-" + socketId) !== null)
-      document.getElementById("other-" + socketId).srcObject = new MediaStream();
     this.sendAnswer(socketId, sdp);
     log("---> Send Answer")
   };
 
   //发送answer类型信令
   skyrtc.prototype.sendAnswer = function (socketId, sdp) {
-    var pc = this.peerConnections[socketId];
+    var pc = this.getInfoBySocketId(socketId,"peerConnection");
     var that = this;
     try {
       pc.setRemoteDescription(new nativeRTCSessionDescription(sdp))
@@ -605,17 +607,15 @@ export var SkyRTC = function () {
   //接收到answer类型信令后将对方的session描述写入PeerConnection中
   skyrtc.prototype.receiveAnswer = function (socketId, sdp) {
     log("---> Receive answer")
-    var pc = this.peerConnections[socketId];
-    pc.setRemoteDescription(new nativeRTCSessionDescription(sdp));
+    this.getInfoBySocketId(socketId,'peerConnection').setRemoteDescription(new nativeRTCSessionDescription(sdp));
   };
 
 
   /***********************点对点连接部分*****************************/
   //创建与其他用户连接的PeerConnections
   skyrtc.prototype.createPeerConnections = function () {
-    var i, m;
-    for (i = 0, m = this.connections.length; i < m; i++) {
-      this.createPeerConnection(this.connections[i]);
+    for(let neighbour of this.neighbourList){
+      this.createPeerConnection(neighbour.socketId);
     }
   };
 
@@ -623,7 +623,7 @@ export var SkyRTC = function () {
   skyrtc.prototype.createPeerConnection = function (socketId) {
     var that = this;
     var pc = new PeerConnection(iceServer);
-    this.peerConnections[socketId] = pc;
+    this.getInfoBySocketId(socketId,'all').peerConnection = pc;
     //监听是否有人发送candidate给自己，如果有的话就执行这个函数
     pc.onicecandidate = function (evt) {
       if (evt.candidate)
@@ -645,7 +645,7 @@ export var SkyRTC = function () {
     };
     //只要pc接收到了一个track就会调用这个函数，但往往一个通信过程会发送两个track过来
     pc.ontrack = function (evt) {
-      that.emit('pc_add_track', evt.track, that.usernames[socketId], pc);
+      that.emit('pc_add_track', evt.track, socketId, pc);
     };
 
     pc.ondatachannel = function (evt) {
@@ -666,8 +666,6 @@ export var SkyRTC = function () {
       //send offer
       try {
         log("---> Creating offer");
-        if (document.getElementById("other-" + socketId) !== null)
-          document.getElementById("other-" + socketId).srcObject = new MediaStream();
         if (pc.signalingState !== "stable") {
           log("     -- The connection isn't stable yet; postponing...")
           return;
@@ -722,9 +720,8 @@ export var SkyRTC = function () {
   /***********************数据通道连接部分*****************************/
   //消息广播
   skyrtc.prototype.broadcast = function (message, time) {
-    var socketId;
-    for (socketId in this.dataChannels) {
-      this.sendMessage(message, time, socketId);
+    for(let neighbour of this.neighbourList){
+      this.sendMessage(message, time, neighbour.socketId);
     }
   };
 
@@ -735,23 +732,23 @@ export var SkyRTC = function () {
       data: message,
       time: time,
     };
-    if (this.dataChannels[socketId].readyState.toLowerCase() === 'open') {
-      this.dataChannels[socketId].send(JSON.stringify(sendData));
+    let dataChannel = this.getInfoBySocketId(socketId,'dataChannel');
+    if (dataChannel.readyState.toLowerCase() === 'open') {
+      dataChannel.send(JSON.stringify(sendData));
     }
   };
 
   //对所有的PeerConnections创建Data channel
   skyrtc.prototype.addDataChannels = function () {
-    var connection;
-    for (connection in this.peerConnections) {
-      this.createDataChannel(connection);
+    for(let neighbour of this.neighbourList){
+      this.createDataChannel(neighbour.socketId,neighbour.peerConnection,neighbour.username);
     }
   };
 
   //对某一个PeerConnection创建Data channel
-  skyrtc.prototype.createDataChannel = function (socketId, label) {
-    var pc, key, channel;
-    pc = this.peerConnections[socketId];
+  skyrtc.prototype.createDataChannel = function (socketId,peerConnection,label) {
+    var pc, channel;
+    pc = peerConnection;
 
     if (!socketId) {
       this.emit("data_channel_create_error", socketId, new Error("attempt to create data channel without socket id"));
@@ -777,7 +774,7 @@ export var SkyRTC = function () {
     };
 
     channel.onclose = function (event) {
-      delete that.dataChannels[socketId];
+      that.getInfoBySocketId(socketId,'all').dataChannel = undefined;
       that.emit('data_channel_closed', channel, socketId);
     };
 
@@ -790,7 +787,7 @@ export var SkyRTC = function () {
       } else if (json.type === 'canvas') {
         that.emit('drawing', json);
       } else {
-        that.emit('data_channel_message', that.names[socketId], json.time, json.data);
+        that.emit('data_channel_message', that.getInfoBySocketId(socketId,'name'), json.time, json.data);
       }
     };
 
@@ -798,7 +795,7 @@ export var SkyRTC = function () {
       that.emit('data_channel_error', channel, socketId, err);
     };
 
-    this.dataChannels[socketId] = channel;
+    that.getInfoBySocketId(socketId,'all').dataChannel = channel;
     return channel;
   };
 
@@ -833,10 +830,9 @@ export var SkyRTC = function () {
 
   //通过Dtata channel向房间内所有其他用户广播文件
   skyrtc.prototype.shareFile = function (file) {
-    var socketId,
-      that = this;
-    for (socketId in that.dataChannels) {
-      that.sendFile(file, socketId);
+    var that = this;
+    for(let neighbour of that.neighbourList){
+      that.sendFile(file,neighbour.socketId)
     }
     that.emit("file_send_successful");
   };
@@ -860,13 +856,13 @@ export var SkyRTC = function () {
     //     return;
     // }
     // file = dom.files[0];
-    that.fileChannels[socketId] = that.fileChannels[socketId] || {};
+    let fileChannel = that.getInfoBySocketId(socketId,'fileChannel');
     sendId = that.getRandomString();
     fileToSend = {
       file: file,
       state: "ask"
     };
-    that.fileChannels[socketId][sendId] = fileToSend;
+    fileChannel[sendId] = fileToSend;
     that.sendAsk(socketId, sendId, fileToSend);
   };
 
@@ -876,11 +872,11 @@ export var SkyRTC = function () {
       sendId,
       that = this,
       nextTick = false;
-    for (socketId in that.fileChannels) {
-      for (sendId in that.fileChannels[socketId]) {
-        if (that.fileChannels[socketId][sendId].state === "send") {
+    for(let neighbour of that.neighbourList){
+      for(sendId in neighbour.fileChannel){
+        if (neighbour.fileChannel[sendId].state === "send") {
           nextTick = true;
-          that.sendFileChunk(socketId, sendId);
+          that.sendFileChunk(neighbour.socketId, sendId);
         }
       }
     }
@@ -894,7 +890,7 @@ export var SkyRTC = function () {
   //发送某个文件的碎片
   skyrtc.prototype.sendFileChunk = function (socketId, sendId) {
     var that = this,
-      fileToSend = that.fileChannels[socketId][sendId],
+      fileToSend = that.getInfoBySocketId(socketId,'fileChannel')[sendId],
       packet = {
         type: "__file",
         signal: "chunk",
@@ -919,7 +915,7 @@ export var SkyRTC = function () {
       that.cleanSendFile(sendId, socketId);
     }
 
-    channel = that.dataChannels[socketId];
+    channel = that.getInfoBySocketId(socketId,'dataChannel');
 
     if (!channel) {
       that.handle_send_file_errorEvent(new Error("Channel has been destoried"), socketId, sendId, fileToSend.file);
@@ -941,7 +937,7 @@ export var SkyRTC = function () {
         fileToSend.packetsToSend = fileToSend.allPackets = parseInt(fileToSend.fileData.length / packetSize, 10);
         that.sendFileChunks();
       };
-    fileToSend = that.fileChannels[socketId][sendId];
+    fileToSend = that.getInfoBySocketId(socketId,'fileChannel')[sendId];
     reader = new window.FileReader(fileToSend.file);
     reader.readAsDataURL(fileToSend.file);
     reader.onload = initSending;
@@ -951,7 +947,7 @@ export var SkyRTC = function () {
   //发送文件请求后若对方拒绝接受,清除掉本地的文件信息
   skyrtc.prototype.receiveFileRefuse = function (sendId, socketId) {
     var that = this;
-    that.fileChannels[socketId][sendId].state = "refused";
+    that.getInfoBySocketId(socketId,'fileChannel')[sendId].state = "refused";
     // that.emit("send_file_refused", sendId, socketId, that.fileChannels[socketId][sendId].file);
     that.cleanSendFile(sendId, socketId);
   };
@@ -959,13 +955,13 @@ export var SkyRTC = function () {
   //清除发送文件缓存
   skyrtc.prototype.cleanSendFile = function (sendId, socketId) {
     var that = this;
-    delete that.fileChannels[socketId][sendId];
+    delete that.getInfoBySocketId(socketId,'fileChannel')[sendId];
   };
 
   //发送文件请求
   skyrtc.prototype.sendAsk = function (socketId, sendId, fileToSend) {
     var that = this,
-      channel = that.dataChannels[socketId],
+      channel = that.getInfoBySocketId(socketId,'dataChannel'),
       packet;
     if (!channel) {
       that.handle_send_file_errorEvent(new Error("Channel has been closed"), socketId, sendId, fileToSend.file);
@@ -1042,10 +1038,10 @@ export var SkyRTC = function () {
   skyrtc.prototype.sendFileAccept = function (sendId) {
     var that = this,
       fileInfo = that.receiveFiles[sendId],
-      channel = that.dataChannels[fileInfo.socketId],
+      channel = that.getInfoBySocketId(fileInfo.socketId,'dataChannel'),
       packet;
     if (!channel) {
-      that.handle_receive_file_errorEvent(new Error("Channel has been destoried"), sendId, socketId);
+      that.handle_receive_file_errorEvent(new Error("Channel has been destoried"), sendId, fileInfo.socketId);
     }
     packet = {
       type: "__file",
@@ -1059,10 +1055,10 @@ export var SkyRTC = function () {
   skyrtc.prototype.sendFileRefuse = function (sendId) {
     var that = this,
       fileInfo = that.receiveFiles[sendId],
-      channel = that.dataChannels[fileInfo.socketId],
+      channel = that.getInfoBySocketId(fileInfo.socketId,'dataChannel'),
       packet;
     if (!channel) {
-      that.handle_receive_file_errorEvent(new Error("Channel has been destoried"), sendId, socketId);
+      that.handle_receive_file_errorEvent(new Error("Channel has been destoried"), sendId, fileInfo.socketId);
     }
     packet = {
       type: "__file",

@@ -16,16 +16,6 @@ import * as $ from 'jquery';
 declare var Blockly: any;
 declare var interpreter: any;
 
-interface SkyRTCType {
-  on?: any,
-  createStream?: any,
-  connections?: any,
-  socket?: any,
-  attachStream?: any,
-  connect?: any,
-  emit?: any,
-}
-
 interface ObjectsType{
   moveObject?: any,
   backgroundImg?: string
@@ -57,7 +47,7 @@ interface webrtcControl {
   roomID?: number,//所在的房间号
   rtc?: any,//webrtc-client对象实体
   localMediaStream?: object//本地的流媒体
-  mediaStreams?: any[],//所有需要展示的流媒体，数组，格式：name，stream,username
+  mediaStreams?: any[],//所有需要展示的流媒体，数组，格式：name，stream,username,socketId
   currentDisplayMediaStreamIndex?: number,//当前展示的流媒体的索引
   videoControl?: string,//控制自己的摄像头权限,open or close
   audioControl?: string,//控制自己的音频权限,open or close
@@ -68,7 +58,7 @@ interface webrtcControl {
   fileList?: any[],//文件上传的数组
   sharing?: boolean,//分享文件的状态
   roomCamerasVisible?: boolean,//群体摄像头所在的抽屉的开关
-  remoteControlUsername?: string,//远程连接的用户的用户名
+  remoteControlSocketId?: any,//远程连接的用户的socketId
 }
 @Component({
   selector: 'app-blockly',
@@ -96,7 +86,7 @@ export class BlocklyComponent implements OnInit {
     fileList : [],
     sharing : false,
     roomCamerasVisible: false,
-    remoteControlUsername: undefined,
+    remoteControlSocketId: undefined,
   }
   tabs = [];
   chatRoomVisible = false;//聊天室抽屉的显示与否
@@ -215,12 +205,13 @@ export class BlocklyComponent implements OnInit {
     let notification = that.notification;
     let message = that.message;
     //成功创建WebSocket连接
-    rtc.on("connected", function (names,usernames) {
+    rtc.on("connected", function (clientsInfo) {
       that.webrtcControl.inputRoomIDString = '';
-      for(let index in names){
+      for(let index in clientsInfo){
         that.webrtcControl.mediaStreams.push({
-          name: names[index],
-          username: usernames[index],
+          name: clientsInfo[index]['name'],
+          username: clientsInfo[index]['username'],
+          socketId: index,
           stream: new MediaStream(),
         })
       }
@@ -244,6 +235,7 @@ export class BlocklyComponent implements OnInit {
       that.webrtcControl.mediaStreams.splice(0,0,{
         name: '我',
         username: that.tokenService.get().username,
+        socketId: that.rtc.mySocketId,
         stream: stream,
       })
       that.webrtcControl.currentDisplayMediaStreamIndex = 0;
@@ -286,8 +278,8 @@ export class BlocklyComponent implements OnInit {
     });
 
     //接收到其他用户的视频流
-    rtc.on('pc_add_track', function (track, username) {
-      let stream = <MediaStream> that.findStreamByUsername(username);
+    rtc.on('pc_add_track', function (track, socketId) {
+      let stream = <MediaStream> that.findStreamBySocketId(socketId);
       if(track.kind === 'video'){
         if(stream.getVideoTracks().length !== 0){
           stream.removeTrack(stream.getVideoTracks()[0]);
@@ -306,10 +298,11 @@ export class BlocklyComponent implements OnInit {
     });
 
     //当房间中有新用户加入时
-    rtc.on('new_client_joined',function (name,username){
+    rtc.on('new_client_joined',function (name,username,socketId){
       that.webrtcControl.mediaStreams.push({
         name:name,
         username: username,
+        socketId: socketId,
         stream: new MediaStream(),
       })
       message.success(name+'加入到了房间中',{nzDuration: that.successDuration})
@@ -358,19 +351,6 @@ export class BlocklyComponent implements OnInit {
       })
     });
 
-    //对方同意接收文件
-    // rtc.on("send_file_accepted", function (sendId, socketId, file) {
-    //   var p = document.getElementById("sf-" + sendId);
-    //   p.innerText = "对方接收" + file.name + "文件，等待发送";
-    //
-    // });
-
-    //对方拒绝接收文件
-    // rtc.on("send_file_refused", function (sendId, socketId, file) {
-    //   var p = document.getElementById("sf-" + sendId);
-    //   p.innerText = "对方拒绝接收" + file.name + "文件";
-    // });
-
     //发送文件碎片
     rtc.on('send_file_chunk', function (sendId, socketId, percent, file) {
       console.log(file.name + "文件正在发送: " + Math.ceil(percent) + "%")
@@ -384,12 +364,6 @@ export class BlocklyComponent implements OnInit {
       // var p = document.getElementById("rf-" + sendId);
       // p.innerText = "正在接收" + fileName + "文件：" + Math.ceil(percent) + "%";
     });
-
-    //接收到文件
-    // rtc.on('receive_file', function (sendId, socketId, name) {
-    //   var p = document.getElementById("rf-" + sendId);
-    //   p.parentNode.removeChild(p);
-    // });
 
     //发送文件时出现错误
     rtc.on('send_file_error', function (error) {
@@ -408,7 +382,7 @@ export class BlocklyComponent implements OnInit {
     });
 
     //远程连接成功
-    rtc.on('remote_control_success', function (name,track) {
+    rtc.on('remote_control_success', function (name) {
       that.notification.success('和'+name+'建立远程控制成功',
         "连接已建立",{nzDuration: that.successDuration});
       let baseUrl = window.location.href.split('/')[3];
@@ -416,20 +390,20 @@ export class BlocklyComponent implements OnInit {
         baseUrl = '';
       }
       let temp = window.open('_blank');
-      temp.location.href=baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername;
+      temp.location.href=baseUrl + "/remoteControl/?controller="+that.webrtcControl.rtc.mySocketId+"&controlled="+that.webrtcControl.remoteControlSocketId;
       // window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
     });
 
     //连接请求确认
-    rtc.on('receive_remote_control_ask', function (name,username) {
+    rtc.on('receive_remote_control_ask', function (socketId,name) {
       that.modal.confirm({
         nzTitle: '是否接收远程控制请求?',
         nzContent: name+'请求控制您的屏幕',
         nzOnOk: () =>{
-          that.webrtcControl.rtc.getDesktopTrack(username,that.tokenService.get().username);
+          that.webrtcControl.rtc.getDesktopTrack(socketId);
         },
         nzOnCancel: () =>{
-          that.webrtcControl.rtc.handleRemoteControlRequest(username,that.tokenService.get().username,"refuse",null,'目标用户拒绝了你的远程控制连接请求');
+          that.webrtcControl.rtc.handleRemoteControlRequest(socketId,"refuse",'目标用户拒绝了你的远程控制连接请求');
         }
       })
     });
@@ -545,9 +519,8 @@ export class BlocklyComponent implements OnInit {
 
   remoteControlStart(event): void{
     let that = this;
-    let controlledUsername = event[0];
-    let myUsername = this.tokenService.get().username;
-    that.webrtcControl.rtc.askRemoteControl(controlledUsername,myUsername);
+    let controlledSocketId = event[0];
+    that.webrtcControl.rtc.askRemoteControl(controlledSocketId);
   }
 
   setTitle(str) {
@@ -1170,10 +1143,10 @@ export class BlocklyComponent implements OnInit {
     return false;
   }
 
-  findStreamByUsername(username): object{
+  findStreamBySocketId(socketId): object{
     let that = this;
     for(let item of that.webrtcControl.mediaStreams){
-      if(item.username === username){
+      if(item.socketId === socketId){
         return item.stream;
       }
     }
