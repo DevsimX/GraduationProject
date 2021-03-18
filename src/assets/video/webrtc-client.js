@@ -316,13 +316,12 @@ export var SkyRTC = function () {
         data.socketId,
         data.name,
         data.username,
-        undefined,
+        that.createPeerConnection(data.socketId),
         undefined,
         undefined,
       )
     );
     that.emit("new_client_joined", data.name, data.username,data.socketId);
-    that.createPeerConnection(data.socketId);
   }
 
   //房间中有用户退出
@@ -612,85 +611,14 @@ export var SkyRTC = function () {
   //创建与其他用户连接的PeerConnections
   skyrtc.prototype.createPeerConnections = function () {
     for(let neighbour of this.neighbourList){
-      this.createPeerConnection(neighbour.socketId);
+      neighbour.peerConnection = this.createPeerConnection(neighbour.socketId);
     }
-  };
-
-  //和远程控制的对方进行单个PeerConnection的创建，角色为被控制者
-  //这里需要修改的内容有很多，需要对是否属于remote进行分辨，因为本身peerconnection是依赖于socketid而存在的
-  //理论上来说，每个client存储的都是其他用户的peerconnection
-  skyrtc.prototype.createPeerConnectionWithController = function (socketId) {
-    var that = this;
-    var pc = new PeerConnection(iceServer);
-    that.remoteControlInfo.peerConnection = pc;
-    //监听是否有人发送candidate给自己，如果有的话就执行这个函数
-    pc.onicecandidate = function (evt) {
-      if (evt.candidate)
-        that.socket.send(JSON.stringify({
-          "eventName": "__ice_candidate",
-          "data": {
-            "id": evt.candidate.sdpMid,
-            "label": evt.candidate.sdpMLineIndex,
-            "sdpMLineIndex": evt.candidate.sdpMLineIndex,
-            "candidate": evt.candidate.candidate,
-            "socketId": socketId,
-            "remoteControl": "remote",
-          }
-        }));
-      that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
-    };
-
-    //只要pc接收到了一个track就会调用这个函数，但往往一个通信过程会发送两个track过来
-    pc.ontrack = function (evt) {
-      that.remoteControlInfo.stream.addTrack(evt.track);
-    };
-
-    pc.ondatachannel = function (evt) {
-      that.addDataChannel(socketId, evt.channel);
-    };
-
-    pc.onconnectionstatechange = function (event) {
-      log("当前的connectionstate为：" + pc.connectionState);
-    }
-
-    pc.onsignalingstatechange = function (event) {
-      log("当前的signalingstate为：" + pc.signalingState);
-    }
-
-    //pc添加了add track之后，浏览器会启动negotiationneeded，调用这个函数，意思是你已经准备好了，可以准备连接了
-    pc.onnegotiationneeded = function () {
-      //send offer
-      try {
-        log("---> Creating offer");
-        if (pc.signalingState !== "stable") {
-          log("     -- The connection isn't stable yet; postponing...")
-          return;
-        }
-        pc.createOffer().then(function (offer) {
-          return pc.setLocalDescription(offer);
-        })
-          .then(function () {
-            that.socket.send(JSON.stringify({
-              "eventName": "__offer",
-              "data": {
-                "sdp": pc.localDescription,
-                "socketId": socketId
-              }
-            }));
-          })
-      } catch (err) {
-        log("*** The following error occurred while handling the negotiationneeded event:");
-        reportError(err);
-      }
-    }
-    return pc;
   };
 
   //创建单个PeerConnection
   skyrtc.prototype.createPeerConnection = function (socketId) {
     var that = this;
     var pc = new PeerConnection(iceServer);
-    this.getInfoBySocketId(socketId,'all').peerConnection = pc;
     //监听是否有人发送candidate给自己，如果有的话就执行这个函数
     pc.onicecandidate = function (evt) {
       if (evt.candidate)
@@ -704,7 +632,7 @@ export var SkyRTC = function () {
             "socketId": socketId
           }
         }));
-      that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
+      // that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
     };
 
     pc.onopen = function () {
