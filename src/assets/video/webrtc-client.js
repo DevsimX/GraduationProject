@@ -142,26 +142,19 @@ export var SkyRTC = function () {
     this.name = null;
     //邻居的列表
     this.neighbourList = [];
-    //保存所有与本地相连的peer connection， 键为socket id，值为PeerConnection类型
-    this.peerConnections = {};
-    //保存所有与本地连接的socket的id
-    this.connections = [];
-    //保存所有与本地连接的socket的name
-    this.names = {};
-    //保存所有与本地连接的socket的username
-    this.usernames = {};
     //初始时需要构建链接的数目
     this.numStreams = 0;
     //初始时已经连接的数目
     this.initializedStreams = 0;
-    //保存所有的data channel，键为socket id，值通过PeerConnection实例的createChannel创建
-    this.dataChannels = {};
-    //保存所有发文件的data channel及其发文件状态
-    this.fileChannels = {};
     //保存所有接受到的文件
     this.receiveFiles = {};
-    //远程连接的信息，peerconnection，role，track，other socket id
-    this.remoteControlInfo = {};
+    //远程连接的信息，peerconnection，role，stream，remote socket id
+    this.remoteControlInfo = {
+      peerConnection: undefined,
+      role: undefined,
+      stream: undefined,
+      remoteSocketId: undefined,
+    };
   }
 
   //继承自事件处理器，提供绑定事件和触发事件的功能
@@ -441,8 +434,12 @@ export var SkyRTC = function () {
       video: true, audio: false
     })
       .then(function (stream) {
+        that.remoteControlInfo.remoteSocketId = controllerSocketId;
+        that.remoteControlInfo.role = 'controlled';
+        that.remoteControlInfo.stream = stream;
+        that.createPeerConnection(controllerSocketId)
         //这里缺少内容，建立peerconnection
-        that.handleRemoteControlRequest(controllerSocketId, "accept", null);
+        // that.handleRemoteControlRequest(controllerSocketId, "accept", null);
       })
       .catch(function (error) {
         that.emit("error", error);
@@ -617,6 +614,76 @@ export var SkyRTC = function () {
     for(let neighbour of this.neighbourList){
       this.createPeerConnection(neighbour.socketId);
     }
+  };
+
+  //和远程控制的对方进行单个PeerConnection的创建，角色为被控制者
+  //这里需要修改的内容有很多，需要对是否属于remote进行分辨，因为本身peerconnection是依赖于socketid而存在的
+  //理论上来说，每个client存储的都是其他用户的peerconnection
+  skyrtc.prototype.createPeerConnectionWithController = function (socketId) {
+    var that = this;
+    var pc = new PeerConnection(iceServer);
+    that.remoteControlInfo.peerConnection = pc;
+    //监听是否有人发送candidate给自己，如果有的话就执行这个函数
+    pc.onicecandidate = function (evt) {
+      if (evt.candidate)
+        that.socket.send(JSON.stringify({
+          "eventName": "__ice_candidate",
+          "data": {
+            "id": evt.candidate.sdpMid,
+            "label": evt.candidate.sdpMLineIndex,
+            "sdpMLineIndex": evt.candidate.sdpMLineIndex,
+            "candidate": evt.candidate.candidate,
+            "socketId": socketId,
+            "remoteControl": "remote",
+          }
+        }));
+      that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
+    };
+
+    //只要pc接收到了一个track就会调用这个函数，但往往一个通信过程会发送两个track过来
+    pc.ontrack = function (evt) {
+      that.remoteControlInfo.stream.addTrack(evt.track);
+    };
+
+    pc.ondatachannel = function (evt) {
+      that.addDataChannel(socketId, evt.channel);
+    };
+
+    pc.onconnectionstatechange = function (event) {
+      log("当前的connectionstate为：" + pc.connectionState);
+    }
+
+    pc.onsignalingstatechange = function (event) {
+      log("当前的signalingstate为：" + pc.signalingState);
+    }
+
+    //pc添加了add track之后，浏览器会启动negotiationneeded，调用这个函数，意思是你已经准备好了，可以准备连接了
+    pc.onnegotiationneeded = function () {
+      //send offer
+      try {
+        log("---> Creating offer");
+        if (pc.signalingState !== "stable") {
+          log("     -- The connection isn't stable yet; postponing...")
+          return;
+        }
+        pc.createOffer().then(function (offer) {
+          return pc.setLocalDescription(offer);
+        })
+          .then(function () {
+            that.socket.send(JSON.stringify({
+              "eventName": "__offer",
+              "data": {
+                "sdp": pc.localDescription,
+                "socketId": socketId
+              }
+            }));
+          })
+      } catch (err) {
+        log("*** The following error occurred while handling the negotiationneeded event:");
+        reportError(err);
+      }
+    }
+    return pc;
   };
 
   //创建单个PeerConnection
