@@ -398,6 +398,7 @@ export class BlocklyComponent implements OnInit {
         baseUrl = '';
       }
       let temp = window.open('_blank');
+      console.log(stream);
       temp.location.href=
         baseUrl + "/remoteControl/?controller="+
         that.webrtcControl.rtc.mySocketId+"&controlled="+
