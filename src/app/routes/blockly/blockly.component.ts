@@ -238,7 +238,7 @@ export class BlocklyComponent implements OnInit {
       that.webrtcControl.mediaStreams.splice(0,0,{
         name: '我',
         username: that.tokenService.get().username,
-        socketId: that.rtc.mySocketId,
+        socketId: that.webrtcControl.rtc.mySocketId,
         stream: stream,
       })
       that.webrtcControl.currentDisplayMediaStreamIndex = 0;
