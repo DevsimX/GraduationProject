@@ -16,6 +16,10 @@ import * as $ from 'jquery';
 declare var Blockly: any;
 declare var interpreter: any;
 
+interface CryptoType{
+  encode?:any;
+  decode?:any;
+}
 interface ObjectsType{
   moveObject?: any,
   backgroundImg?: string
@@ -383,6 +387,7 @@ export class BlocklyComponent implements OnInit {
 
     //远程连接成功
     rtc.on('remote_control_success', function (name) {
+      let crypto = new Crypto() as CryptoType;
       that.notification.success('和'+name+'建立远程控制成功',
         "连接已建立",{nzDuration: that.successDuration});
       let baseUrl = window.location.href.split('/')[3];
@@ -390,7 +395,10 @@ export class BlocklyComponent implements OnInit {
         baseUrl = '';
       }
       let temp = window.open('_blank');
-      temp.location.href=baseUrl + "/remoteControl/?controller="+that.webrtcControl.rtc.mySocketId+"&controlled="+that.webrtcControl.remoteControlSocketId;
+      console.log(that.webrtcControl.rtc.remoteControlInfo.stream);
+      temp.location.href=baseUrl + "/remoteControl/?controller="+that.webrtcControl.rtc.mySocketId+"&controlled="+that.webrtcControl.remoteControlSocketId+crypto.encode({
+        'stream': that.webrtcControl.rtc.remoteControlInfo.stream,
+      });
       // window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
     });
 
