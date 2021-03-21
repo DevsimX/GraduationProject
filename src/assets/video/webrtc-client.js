@@ -622,7 +622,7 @@ export var SkyRTC = function () {
   //接收到answer类型信令后将对方的session描述写入PeerConnection中
   skyrtc.prototype.receiveAnswer = function (socketId, sdp, role) {
     log("---> Receive answer")
-    let peerConnection = role === 'remote' ? this.remoteControlInfo.peerConnection ? this.getInfoBySocketId(socketId,'peerConnection');
+    let peerConnection = role === 'remote' ? this.remoteControlInfo.peerConnection : this.getInfoBySocketId(socketId,'peerConnection');
     peerConnection.setRemoteDescription(new nativeRTCSessionDescription(sdp));
   };
 
