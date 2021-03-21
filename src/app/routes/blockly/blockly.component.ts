@@ -11,11 +11,14 @@ import { NzMessageService, NzNotificationService } from 'ng-zorro-antd';
 import { UploadFile } from 'ng-zorro-antd/upload';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
 import {NzModalService} from "ng-zorro-antd/modal";
-import * as $ from 'jquery';
 
 declare var Blockly: any;
 declare var interpreter: any;
 
+interface CryptoType{
+  encode?:any;
+  decode?:any;
+}
 interface ObjectsType{
   moveObject?: any,
   backgroundImg?: string
@@ -381,16 +384,26 @@ export class BlocklyComponent implements OnInit {
         error,{nzDuration: that.errorDuration})
     });
 
-    //远程连接成功
+    //远程连接被接受
     rtc.on('remote_control_success', function (name) {
       that.notification.success('和'+name+'建立远程控制成功',
-        "连接已建立",{nzDuration: that.successDuration});
+        "连接已建立，等待对方共享屏幕",{nzDuration: that.successDuration});
+    });
+
+    //收到远程控制的流媒体
+    rtc.on('get_remote_control_stream', function (stream) {
+      let crypto = new Crypto() as CryptoType;
       let baseUrl = window.location.href.split('/')[3];
       if(baseUrl !== '#'){
         baseUrl = '';
       }
       let temp = window.open('_blank');
-      temp.location.href=baseUrl + "/remoteControl/?controller="+that.webrtcControl.rtc.mySocketId+"&controlled="+that.webrtcControl.remoteControlSocketId;
+      temp.location.href=
+        baseUrl + "/remoteControl/?controller="+
+        that.webrtcControl.rtc.mySocketId+"&controlled="+
+        that.webrtcControl.remoteControlSocketId+crypto.encode({
+          'stream': stream,
+        });
       // window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
     });
 

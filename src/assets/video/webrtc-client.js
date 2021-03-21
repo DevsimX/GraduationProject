@@ -199,6 +199,9 @@ export var SkyRTC = function () {
         case "_ice_candidate":
           that.handle_ice_candidateEvent(data);
           break;
+        case "_remote_ice_candidate":
+          that.handle_remote_ice_candidateEvent(data);
+          break;
         case "_new_peer":
           that.handle_new_peerEvent(data);
           break;
@@ -308,6 +311,18 @@ export var SkyRTC = function () {
     that.emit('get_ice_candidate', candidate);
   }
 
+  skyrtc.prototype.handle_remote_ice_candidateEvent = function (data) {
+    let that = this;
+    var candidate = new nativeRTCIceCandidate(data);
+    var pc = that.remoteControlInfo.peerConnection;
+    if (!pc || !pc.remoteDescription || !pc.remoteDescription.type) {
+      //push candidate onto queue...
+      log("remote not set!")
+    }
+    pc.addIceCandidate(candidate);
+    that.emit('get_ice_candidate', candidate);
+  }
+
   //有新用户加入到房间中
   skyrtc.prototype.handle_new_peerEvent = function (data) {
     let that = this;
@@ -316,7 +331,7 @@ export var SkyRTC = function () {
         data.socketId,
         data.name,
         data.username,
-        that.createPeerConnection(data.socketId),
+        that.createPeerConnection(data.socketId,"normal"),
         undefined,
         undefined,
       )
@@ -367,14 +382,14 @@ export var SkyRTC = function () {
   //接收offer
   skyrtc.prototype.handle_offerEvent = function (data) {
     let that = this;
-    that.receiveOffer(data.socketId, data.sdp);
+    that.receiveOffer(data.socketId, data.sdp,data.role);
     that.emit("get_offer", data);
   }
 
   //接收answer
   skyrtc.prototype.handle_answerEvent = function (data) {
     let that = this;
-    that.receiveAnswer(data.socketId, data.sdp);
+    that.receiveAnswer(data.socketId, data.sdp, data.role);
     that.emit('get_answer', data);
   }
 
@@ -405,6 +420,10 @@ export var SkyRTC = function () {
   //与选中的用户进行连接请求
   skyrtc.prototype.askRemoteControl = function (controlledSocketId) {
     let that = this;
+    that.remoteControlInfo.stream = new MediaStream();
+    that.remoteControlInfo.role = "controller";
+    that.remoteControlInfo.peerConnection = that.createPeerConnection(controlledSocketId,'remote');
+    that.remoteControlInfo.remoteSocketId = controlledSocketId;
     that.socket.send(JSON.stringify({
       "eventName": "__remoteControlAsk",
       "data": {
@@ -436,9 +455,8 @@ export var SkyRTC = function () {
         that.remoteControlInfo.remoteSocketId = controllerSocketId;
         that.remoteControlInfo.role = 'controlled';
         that.remoteControlInfo.stream = stream;
-        that.createPeerConnection(controllerSocketId)
-        //这里缺少内容，建立peerconnection
-        // that.handleRemoteControlRequest(controllerSocketId, "accept", null);
+        that.remoteControlInfo.peerConnection = that.createPeerConnection(controllerSocketId,"remote");
+        that.remoteControlInfo.peerConnection.addTrack(stream.getVideoTracks()[0])
       })
       .catch(function (error) {
         that.emit("error", error);
@@ -562,15 +580,15 @@ export var SkyRTC = function () {
   };
 
   //接收到Offer类型信令后作为回应返回answer类型信令
-  skyrtc.prototype.receiveOffer = function (socketId, sdp) {
+  skyrtc.prototype.receiveOffer = function (socketId, sdp, role) {
     log("---> Receive offer")
-    this.sendAnswer(socketId, sdp);
+    this.sendAnswer(socketId, sdp, role);
     log("---> Send Answer")
   };
 
   //发送answer类型信令
-  skyrtc.prototype.sendAnswer = function (socketId, sdp) {
-    var pc = this.getInfoBySocketId(socketId,"peerConnection");
+  skyrtc.prototype.sendAnswer = function (socketId, sdp, role) {
+    var pc = role === 'remote' ? this.remoteControlInfo.peerConnection : this.getInfoBySocketId(socketId,"peerConnection");
     var that = this;
     try {
       pc.setRemoteDescription(new nativeRTCSessionDescription(sdp))
@@ -590,7 +608,8 @@ export var SkyRTC = function () {
             "eventName": "__answer",
             "data": {
               "socketId": socketId,
-              "sdp": pc.localDescription
+              "sdp": pc.localDescription,
+              "role": role,
             }
           }));
         })
@@ -601,9 +620,10 @@ export var SkyRTC = function () {
   };
 
   //接收到answer类型信令后将对方的session描述写入PeerConnection中
-  skyrtc.prototype.receiveAnswer = function (socketId, sdp) {
+  skyrtc.prototype.receiveAnswer = function (socketId, sdp, role) {
     log("---> Receive answer")
-    this.getInfoBySocketId(socketId,'peerConnection').setRemoteDescription(new nativeRTCSessionDescription(sdp));
+    let peerConnection = role === 'remote' ? this.remoteControlInfo.peerConnection ? this.getInfoBySocketId(socketId,'peerConnection');
+    peerConnection.setRemoteDescription(new nativeRTCSessionDescription(sdp));
   };
 
 
@@ -611,15 +631,15 @@ export var SkyRTC = function () {
   //创建与其他用户连接的PeerConnections
   skyrtc.prototype.createPeerConnections = function () {
     for(let neighbour of this.neighbourList){
-      neighbour.peerConnection = this.createPeerConnection(neighbour.socketId);
+      neighbour.peerConnection = this.createPeerConnection(neighbour.socketId,"normal");
     }
   };
 
-  //创建单个PeerConnection
-  skyrtc.prototype.createPeerConnection = function (socketId) {
+  //创建单个PeerConnection，role用于区分是视频流还是远程控制的peerConnection
+  skyrtc.prototype.createPeerConnection = function (socketId,role) {
     var that = this;
     var pc = new PeerConnection(iceServer);
-    //监听是否有人发送candidate给自己，如果有的话就执行这个函数
+    //如果peerconnection要和其他的peerconnection通信就会触发这个函数
     pc.onicecandidate = function (evt) {
       if (evt.candidate)
         that.socket.send(JSON.stringify({
@@ -629,7 +649,8 @@ export var SkyRTC = function () {
             "label": evt.candidate.sdpMLineIndex,
             "sdpMLineIndex": evt.candidate.sdpMLineIndex,
             "candidate": evt.candidate.candidate,
-            "socketId": socketId
+            "socketId": socketId,
+            "role": role,
           }
         }));
       // that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
@@ -640,7 +661,12 @@ export var SkyRTC = function () {
     };
     //只要pc接收到了一个track就会调用这个函数，但往往一个通信过程会发送两个track过来
     pc.ontrack = function (evt) {
-      that.emit('pc_add_track', evt.track, socketId, pc);
+      if(role === 'remote'){
+        that.remoteControlInfo.stream.addTrack(evt.track);
+        that.emit('get_remote_control_stream',that.remoteControlInfo.stream);
+      }else if(role === 'normal'){
+        that.emit('pc_add_track', evt.track, socketId, pc);
+      }
     };
 
     pc.ondatachannel = function (evt) {
@@ -657,6 +683,7 @@ export var SkyRTC = function () {
     }
 
     //pc添加了add track之后，浏览器会启动negotiationneeded，调用这个函数，意思是你已经准备好了，可以准备连接了
+    //我这里默认只有视频流创建之后才会进行sendoffer的操作。
     pc.onnegotiationneeded = function () {
       //send offer
       try {
@@ -673,7 +700,8 @@ export var SkyRTC = function () {
               "eventName": "__offer",
               "data": {
                 "sdp": pc.localDescription,
-                "socketId": socketId
+                "socketId": socketId,
+                "role": role,
               }
             }));
           })
