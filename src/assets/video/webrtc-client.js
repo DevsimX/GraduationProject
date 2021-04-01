@@ -232,7 +232,7 @@ export var SkyRTC = function () {
     };
 
     socket.onerror = function (error) {
-      that.emit("socket_error", error, socket);
+      that.emit("error", '与服务器的连接存在问题');
     };
 
     socket.onclose = function (event) {
@@ -662,8 +662,9 @@ export var SkyRTC = function () {
     //只要pc接收到了一个track就会调用这个函数，但往往一个通信过程会发送两个track过来
     pc.ontrack = function (evt) {
       if(role === 'remote'){
-        that.remoteControlInfo.stream.addTrack(evt.track);
-        that.emit('get_remote_control_stream',that.remoteControlInfo.stream);
+        console.log(evt);
+        // that.remoteControlInfo.stream.addTrack(evt.track);
+        // that.emit('get_remote_control_stream',that.remoteControlInfo.stream);
       }else if(role === 'normal'){
         that.emit('pc_add_track', evt.track, socketId, pc);
       }

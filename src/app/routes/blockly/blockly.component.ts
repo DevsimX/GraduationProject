@@ -405,7 +405,6 @@ export class BlocklyComponent implements OnInit {
         that.webrtcControl.remoteControlSocketId+crypto.encode({
           'stream': stream,
         });
-      // window.open(baseUrl + "/remoteControl/?controller="+that.tokenService.get().username+"&controlled="+that.webrtcControl.remoteControlUsername);
     });
 
     //连接请求确认
@@ -532,9 +531,10 @@ export class BlocklyComponent implements OnInit {
   }
 
   remoteControlStart(event): void{
-    let that = this;
-    let controlledSocketId = event[0];
-    that.webrtcControl.rtc.askRemoteControl(controlledSocketId);
+    //目前实现方面存在难度，暂时不考虑实现
+    // let that = this;
+    // let controlledSocketId = event[0];
+    // that.webrtcControl.rtc.askRemoteControl(controlledSocketId);
   }
 
   setTitle(str) {
