@@ -8,78 +8,171 @@
   <p>确认提交</p>
 </nz-modal>
 
-<div style="height: 110%;min-height: 1008px; width: 100%;min-width:1400px;background-color: hsla(215, 100%, 95%, 1);padding-bottom: 30px">
+<div
+  style="height: 1100px;width: 100%;min-width:1400px;background-color: hsla(215, 100%, 95%, 1);padding-bottom: 30px">
 
-  <div style="height: 100%;width: calc(100% - 1140px);display: inline-block;">
-    <div style="width: 100%;height: 100%;padding: 20px 0 0 20px;">
-      <div id="blocklyDiv"
-           style="width: 100%; height: 100%;min-height: 800px;border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
-      </div>
-    </div>
-  </div>
-
-  <div style="height: 100%;width: 700px;display: inline-block;">
-    <div style="height: 100%;padding: 20px 0 0 20px;">
-      <div style="height:calc(100% - 650px);text-align: center">
-        <div
-          style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 100%;overflow: scroll;">
-          <div style="min-height: 200px;padding: 20px 20px;">
-            <h1 *ngIf="scene">{{scene.title}} ({{levelIndex}} / {{scene.level_number}})</h1>
-            <p style="padding: 20px 20px;text-align: left;font-size: large;">
-              {{level}}
-            </p>
-          </div>
-
-          <div style="margin-bottom: 20px;">
-            <button nz-button nzType="primary" (click)="prevLevel()" [disabled]="levelIndex<=1">上一关</button>
-            <button nz-button nzType="primary" (click)="nextLevel()"
-                    [disabled]="scene && levelIndex >= scene.level_number">下一关
-            </button>
+  <div style="height: 1080px;width: calc(100% - 440px);display: inline-block;">
+    <nz-tabset style="padding: 20px 20px 0 20px;height: 100%;">
+      <nz-tab nzTitle="学习界面">
+        <div style="height: 1000px;width: calc(100% - 700px);display: inline-block;">
+          <div style="width: 100%;height: 100%;">
+            <div id="blocklyDiv"
+                 style="width: 100%; height: 100%;min-height: 800px;border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
+            </div>
           </div>
         </div>
-      </div>
-      <div style="height: 650px;">
-        <div style="height: 100%;">
-          <div style="height: 100%;">
 
-            <div style="height: calc(100% - 600px);padding-top: 10px">
-              <button nz-button nzType="primary" (click)="runCode()"
-                      style="background-color: #52c41a;border-color: #52c41a;">
-                {{!run ? " 运行" : "运行中"}}
-              </button>
-              <button nz-button nzType="primary" (click)="stopCode()"
-                      style="background-color: #ff4d4f;border-color: #ff4d4f;">终止
-              </button>
-              <button nz-button nzType="primary" (click)="clear()">重置</button>
-              <button nz-button nzType="primary" (click)="showObjects()">查看对象</button>
-              <button nz-button nzType="primary" (click)="show()">帮助</button>
-              <button nz-button nzType="primary" (click)="uploadObjects()" *ngIf="order === 1" style="background-color: #52c41a;border-color: #52c41a;">添加素材</button>
+        <div style="height: 1000px;width: 700px;display: inline-block;">
+          <div style="height: 100%;padding-left: 20px;">
+            <div style="height:calc(100% - 650px);text-align: center">
+              <div
+                style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 100%;overflow: scroll;">
+                <div style="min-height: 200px;padding: 20px 20px;">
+                  <h1 *ngIf="scene">{{scene.title}} ({{levelIndex}} / {{scene.level_number}})</h1>
+                  <p style="padding: 20px 20px;text-align: left;font-size: large;">
+                    {{level}}
+                  </p>
+                </div>
 
-              <button nz-button nzType="primary" style="float: right;" (click)="submit()" [disabled]="order==3 || order == 4">提交</button>
-<!--              <a routerLink="/list"><button nz-button nzType="primary" style="float:right; margin-right: 10px">返回大厅</button></a>-->
+                <div style="margin-bottom: 20px;">
+                  <button nz-button nzType="primary" (click)="prevLevel()" [disabled]="levelIndex<=1">上一关</button>
+                  <button nz-button nzType="primary" (click)="nextLevel()"
+                          [disabled]="scene && levelIndex >= scene.level_number">下一关
+                  </button>
+                </div>
+              </div>
             </div>
+            <div style="height: 650px;">
+              <div style="height: 100%;">
+                <div style="height: 100%;">
 
-            <div
-              style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 600px;"
-              id="background">
-              <canvas id="cnvMain" width="700" height="600"></canvas>
+                  <div style="height: calc(100% - 600px);padding-top: 10px">
+                    <button nz-button nzType="primary" (click)="runCode()"
+                            style="background-color: #52c41a;border-color: #52c41a;">
+                      {{!run ? " 运行" : "运行中"}}
+                    </button>
+                    <button nz-button nzType="primary" (click)="stopCode()"
+                            style="background-color: #ff4d4f;border-color: #ff4d4f;">终止
+                    </button>
+                    <button nz-button nzType="primary" (click)="clear()">重置</button>
+                    <button nz-button nzType="primary" (click)="showObjects()">查看对象</button>
+                    <button nz-button nzType="primary" (click)="show()">帮助</button>
+                    <button nz-button nzType="primary" (click)="uploadObjects()" *ngIf="order === 1"
+                            style="background-color: #52c41a;border-color: #52c41a;">添加素材
+                    </button>
+
+                    <button nz-button nzType="primary" style="float: right;" (click)="submit()"
+                            [disabled]="order==3 || order == 4">提交
+                    </button>
+                    <!--              <a routerLink="/list"><button nz-button nzType="primary" style="float:right; margin-right: 10px">返回大厅</button></a>-->
+                  </div>
+
+                  <div
+                    style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 600px;"
+                    id="background">
+                    <canvas id="cnvMain" width="700" height="600"></canvas>
+                  </div>
+
+                </div>
+              </div>
             </div>
-
           </div>
         </div>
-      </div>
-    </div>
+      </nz-tab>
+      <nz-tab nzTitle="在线白板">
+        <div style="width: 100%; height: 1000px; border: 1px solid black; background-color: white">
+          <canvas-whiteboard #canvasWhiteboard
+                             [drawButtonClass]="'drawButtonClass'"
+                             [drawButtonText]="'Draw'"
+                             [clearButtonClass]="'clearButtonClass'"
+                             [clearButtonText]="'Clear'"
+                             [undoButtonText]="'Undo'"
+                             [undoButtonEnabled]="true"
+                             [redoButtonText]="'Redo'"
+                             [redoButtonEnabled]="true"
+                             [colorPickerEnabled]="true"
+                             [fillColorPickerText]="'Fill'"
+                             [strokeColorPickerText]="'Stroke'"
+                             [saveDataButtonEnabled]="true"
+                             [saveDataButtonText]="'Save'"
+                             [lineWidth]="5"
+                             [strokeColor]="'rgb(0,0,0)'"
+                             [shouldDownloadDrawing]="true">
+          </canvas-whiteboard>
+        </div>
+      </nz-tab>
+    </nz-tabset>
   </div>
+  <!--  <div style="height: 100%;width: calc(100% - 1140px);display: inline-block;">-->
+  <!--    <div style="width: 100%;height: 100%;padding: 20px 0 0 20px;">-->
+  <!--      <div id="blocklyDiv"-->
+  <!--           style="width: 100%; height: 100%;min-height: 800px;border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">-->
+  <!--      </div>-->
+  <!--    </div>-->
+  <!--  </div>-->
 
-  <div style="height: 100%;width: 440px;display: inline-block;vertical-align: top;">
-    <div style="padding: 20px 20px 0 20px;height: 100%;">
+  <!--  <div style="height: 100%;width: 700px;display: inline-block;">-->
+  <!--    <div style="height: 100%;padding: 20px 0 0 20px;">-->
+  <!--      <div style="height:calc(100% - 650px);text-align: center">-->
+  <!--        <div-->
+  <!--          style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 100%;overflow: scroll;">-->
+  <!--          <div style="min-height: 200px;padding: 20px 20px;">-->
+  <!--            <h1 *ngIf="scene">{{scene.title}} ({{levelIndex}} / {{scene.level_number}})</h1>-->
+  <!--            <p style="padding: 20px 20px;text-align: left;font-size: large;">-->
+  <!--              {{level}}-->
+  <!--            </p>-->
+  <!--          </div>-->
+
+  <!--          <div style="margin-bottom: 20px;">-->
+  <!--            <button nz-button nzType="primary" (click)="prevLevel()" [disabled]="levelIndex<=1">上一关</button>-->
+  <!--            <button nz-button nzType="primary" (click)="nextLevel()"-->
+  <!--                    [disabled]="scene && levelIndex >= scene.level_number">下一关-->
+  <!--            </button>-->
+  <!--          </div>-->
+  <!--        </div>-->
+  <!--      </div>-->
+  <!--      <div style="height: 650px;">-->
+  <!--        <div style="height: 100%;">-->
+  <!--          <div style="height: 100%;">-->
+
+  <!--            <div style="height: calc(100% - 600px);padding-top: 10px">-->
+  <!--              <button nz-button nzType="primary" (click)="runCode()"-->
+  <!--                      style="background-color: #52c41a;border-color: #52c41a;">-->
+  <!--                {{!run ? " 运行" : "运行中"}}-->
+  <!--              </button>-->
+  <!--              <button nz-button nzType="primary" (click)="stopCode()"-->
+  <!--                      style="background-color: #ff4d4f;border-color: #ff4d4f;">终止-->
+  <!--              </button>-->
+  <!--              <button nz-button nzType="primary" (click)="clear()">重置</button>-->
+  <!--              <button nz-button nzType="primary" (click)="showObjects()">查看对象</button>-->
+  <!--              <button nz-button nzType="primary" (click)="show()">帮助</button>-->
+  <!--              <button nz-button nzType="primary" (click)="uploadObjects()" *ngIf="order === 1" style="background-color: #52c41a;border-color: #52c41a;">添加素材</button>-->
+
+  <!--              <button nz-button nzType="primary" style="float: right;" (click)="submit()" [disabled]="order==3 || order == 4">提交</button>-->
+  <!--              &lt;!&ndash;              <a routerLink="/list"><button nz-button nzType="primary" style="float:right; margin-right: 10px">返回大厅</button></a>&ndash;&gt;-->
+  <!--            </div>-->
+
+  <!--            <div-->
+  <!--              style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 600px;"-->
+  <!--              id="background">-->
+  <!--              <canvas id="cnvMain" width="700" height="600"></canvas>-->
+  <!--            </div>-->
+
+  <!--          </div>-->
+  <!--        </div>-->
+  <!--      </div>-->
+  <!--    </div>-->
+  <!--  </div>-->
+
+  <div style="height: 1080px;width: 440px;display: inline-block;vertical-align: top;">
+    <div style="padding: 80px 20px 0 20px;height: 100%;">
 
       <div style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;
       height: calc(100% - 520px);min-height:438px;padding: 20px 20px;text-align: center">
         <h1>热线求助</h1>
         <p style="text-indent: 2em;text-align: left">
           如果您在学习过程中遇到了困难，您可以通过视频连线的方式向其他同学或老师寻求帮助。房间的使用采用的是即时建立的方式。你只需要<strong>输入房间号，点击加入房间即可</strong>。
-          输入的房间号如果已经存在就加入，否则就创建房间。<span nz-text ><mark>如果打开音频后麦克风没有声音，请检查浏览器的麦克风权限是否以及开启以及本机麦克风是否可用。</mark></span>
+          输入的房间号如果已经存在就加入，否则就创建房间。<span nz-text><mark>如果打开音频后麦克风没有声音，请检查浏览器的麦克风权限是否以及开启以及本机麦克风是否可用。</mark></span>
         </p>
         <div style="margin-top: 20px;" nz-row [nzGutter]="16">
           <div nz-col class="gutter-row" [nzSpan]="16">
@@ -88,12 +181,15 @@
             </div>
           </div>
           <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" [disabled]="webrtcControl.connected" id="connect" (click)="connect()" nz-button nzType="primary">加入房间</button>
+            <button style="width: 110px" [disabled]="webrtcControl.connected" id="connect" (click)="connect()" nz-button
+                    nzType="primary">加入房间
+            </button>
           </div>
         </div>
         <div style="margin-top: 25px;" nz-row [nzGutter]="16">
           <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" nz-button nz-dropdown [nzDropdownMenu]="deviceMenu" [nzDisabled]="!webrtcControl.mediaUsable">
+            <button style="width: 110px" nz-button nz-dropdown [nzDropdownMenu]="deviceMenu"
+                    [nzDisabled]="!webrtcControl.mediaUsable">
               设备权限
               <i nz-icon nzType="down"></i>
             </button>
@@ -101,14 +197,16 @@
               <ul nz-menu>
                 <li nz-menu-item>
                   <p>视频流权限</p>
-                  <nz-radio-group [(ngModel)]="webrtcControl.videoControl" (ngModelChange)="videoControlChanged([$event])">
+                  <nz-radio-group [(ngModel)]="webrtcControl.videoControl"
+                                  (ngModelChange)="videoControlChanged([$event])">
                     <label nz-radio nzValue="open">开启</label>
                     <label nz-radio nzValue="close">关闭</label>
                   </nz-radio-group>
                 </li>
                 <li nz-menu-item>
                   <p>音频流权限</p>
-                  <nz-radio-group [(ngModel)]="webrtcControl.audioControl" (ngModelChange)="audioControlChanged([$event])">
+                  <nz-radio-group [(ngModel)]="webrtcControl.audioControl"
+                                  (ngModelChange)="audioControlChanged([$event])">
                     <label nz-radio nzValue="open">开启</label>
                     <label nz-radio nzValue="close">关闭</label>
                   </nz-radio-group>
@@ -117,7 +215,8 @@
             </nz-dropdown-menu>
           </div>
           <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" nz-button nz-dropdown [nzDropdownMenu]="shareMenu" [nzDisabled]="!webrtcControl.mediaUsable">
+            <button style="width: 110px" nz-button nz-dropdown [nzDropdownMenu]="shareMenu"
+                    [nzDisabled]="!webrtcControl.mediaUsable">
               共享内容
               <i nz-icon nzType="down"></i>
             </button>
@@ -138,13 +237,17 @@
             </nz-dropdown-menu>
           </div>
           <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" [disabled]="!webrtcControl.connected" id="disconnect" (click)="disconnect()" nz-button nzType="primary">退出房间</button>
+            <button style="width: 110px" [disabled]="!webrtcControl.connected" id="disconnect" (click)="disconnect()"
+                    nz-button nzType="primary">退出房间
+            </button>
           </div>
         </div>
         <div style="margin-top: 25px;" nz-row [nzGutter]="16">
           <div nz-col class="gutter-row" [nzSpan]="8">
             <nz-upload [(nzFileList)]="webrtcControl.fileList" [nzBeforeUpload]="beforeUpload">
-              <button [disabled]="!webrtcControl.connected" style="width: 110px" nz-button><i nz-icon nzType="upload"></i><span>选择文件</span></button>
+              <button [disabled]="!webrtcControl.connected" style="width: 110px" nz-button><i nz-icon
+                                                                                              nzType="upload"></i><span>选择文件</span>
+              </button>
             </nz-upload>
           </div>
           <div nz-col class="gutter-row" [nzSpan]="8">
@@ -157,12 +260,14 @@
               [disabled]="!webrtcControl.connected || webrtcControl.fileList.length == 0"
             >
               分享文件
-<!--              {{ uploading ? 'Uploading' : 'Start Upload' }}-->
+              <!--              {{ uploading ? 'Uploading' : 'Start Upload' }}-->
             </button>
           </div>
           <div nz-col class="gutter-row" [nzSpan]="8">
             <nz-badge [nzCount]="webrtcControl.unreadChatNum">
-              <button [disabled]="!webrtcControl.connected" style="width: 110px" nz-button nzType="primary" (click)="openChatRoom()">聊天室</button>
+              <button [disabled]="!webrtcControl.connected" style="width: 110px" nz-button nzType="primary"
+                      (click)="openChatRoom()">聊天室
+              </button>
             </nz-badge>
             <nz-drawer
               [nzWidth]="750"
@@ -172,9 +277,10 @@
               nzTitle="聊天室"
               (nzOnClose)="closeChatRoom()"
             >
-              <div style="width: 100%;height: 700px;overflow: auto;border: 2px solid #cbc8c8" >
-                <div style="margin:20px" >
-                  <nz-comment *ngFor="let chat of webrtcControl.chatHistory" [nzAuthor]="chat.name" [nzDatetime]="chat.time">
+              <div style="width: 100%;height: 700px;overflow: auto;border: 2px solid #cbc8c8">
+                <div style="margin:20px">
+                  <nz-comment *ngFor="let chat of webrtcControl.chatHistory" [nzAuthor]="chat.name"
+                              [nzDatetime]="chat.time">
                     <nz-avatar
                       nz-comment-avatar
                       nzIcon="user"
@@ -188,16 +294,22 @@
                   </nz-comment>
                 </div>
               </div>
-              <div style="margin-top: 10px;height: calc(100% - 700px)" nz-row [nzGutter]="16" nzType="flex" nzAlign="bottom">
+              <div style="margin-top: 10px;height: calc(100% - 700px)" nz-row [nzGutter]="16" nzType="flex"
+                   nzAlign="bottom">
                 <div nz-col class="gutter-row" [nzSpan]="18">
-                  <textarea placeholder="输入你要发送的消息" style="width: 100%;height: 100px;" rows="4" nz-input [(ngModel)]="webrtcControl.chatMessage"></textarea>
+                  <textarea placeholder="输入你要发送的消息" style="width: 100%;height: 100px;" rows="4" nz-input
+                            [(ngModel)]="webrtcControl.chatMessage"></textarea>
                 </div>
                 <div nz-col class="gutter-row" [nzSpan]="6">
                   <div>
-                    <button style="width: 100%;height: 45px;font-size: 17px;" nzGhost nz-button nzType="danger" (click)="clearChatHistory()">清空聊天记录</button>
+                    <button style="width: 100%;height: 45px;font-size: 17px;" nzGhost nz-button nzType="danger"
+                            (click)="clearChatHistory()">清空聊天记录
+                    </button>
                   </div>
                   <div>
-                    <button style="width: 100%;height: 45px;margin-top: 10px;font-size: 17px;" nzGhost nz-button nzType="primary" (click)="broadcastMessage()">发送</button>
+                    <button style="width: 100%;height: 45px;margin-top: 10px;font-size: 17px;" nzGhost nz-button
+                            nzType="primary" (click)="broadcastMessage()">发送
+                    </button>
                   </div>
                 </div>
               </div>
@@ -214,13 +326,15 @@
         <nz-select disabled="true" style="width: 250px" nzShowSearch
                    nzPlaceHolder="选择你想远程控制的用户" [(ngModel)]="webrtcControl.remoteControlSocketId"
                    (ngModelChange)="remoteControlStart([$event])">
-          <nz-option *ngFor="let mediaStream of webrtcControl.mediaStreams.slice(1)" [nzLabel]="mediaStream.name" [nzValue]="mediaStream.socketId"></nz-option>
+          <nz-option *ngFor="let mediaStream of webrtcControl.mediaStreams.slice(1)" [nzLabel]="mediaStream.name"
+                     [nzValue]="mediaStream.socketId"></nz-option>
         </nz-select>
       </div>
 
       <div
         style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 400px;margin-top: 25px;">
-        <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}" style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
+        <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}"
+                 style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
           <video controls="controls" [volume]="0.0" *ngIf="webrtcControl.mediaStreams.length > 0"
                  [srcObject]="webrtcControl.mediaStreams[0].stream" autoplay width="350px"></video>
         </nz-card>
@@ -233,17 +347,20 @@
           (nzOnClose)="closeCameras()"
         >
           <nz-empty *ngIf="webrtcControl.mediaStreams.length <= 1"></nz-empty>
-          <nz-card style="max-width: 400px;display: inline-block;margin-right: 60px;text-align: center;" *ngFor="let media of webrtcControl.mediaStreams.slice(1)" [nzTitle]="media.name+'的摄像头'">
-            <video  controls="controls"
+          <nz-card style="max-width: 400px;display: inline-block;margin-right: 60px;text-align: center;"
+                   *ngFor="let media of webrtcControl.mediaStreams.slice(1)" [nzTitle]="media.name+'的摄像头'">
+            <video controls="controls"
                    [srcObject]="media.stream" autoplay width="350px"></video>
           </nz-card>
         </nz-drawer>
         <ng-template #extraTemplate>
-          <button [disabled]="!webrtcControl.connected" style="width: 160px" nz-button nzType="primary" (click)="openCameras()">查看所有人的摄像头</button>
+          <button [disabled]="!webrtcControl.connected" style="width: 160px" nz-button nzType="primary"
+                  (click)="openCameras()">查看所有人的摄像头
+          </button>
         </ng-template>
-<!--        <div id="videos" style="height: 500px;">-->
-<!--          <video [srcObject]="webrtcControl.localMediaStream" id="me" autoplay width="400px"></video>-->
-<!--        </div>-->
+        <!--        <div id="videos" style="height: 500px;">-->
+        <!--          <video [srcObject]="webrtcControl.localMediaStream" id="me" autoplay width="400px"></video>-->
+        <!--        </div>-->
 
       </div>
 
@@ -252,17 +369,20 @@
 
 </div>
 
-<nz-drawer [nzClosable]="false" [nzVisible]="drawerVisible" [nzWidth]="800" nzPlacement="right" nzTitle="添加素材" (nzOnClose)="closeDrawer()">
+<nz-drawer [nzClosable]="false" [nzVisible]="drawerVisible" [nzWidth]="800" nzPlacement="right" nzTitle="添加素材"
+           (nzOnClose)="closeDrawer()">
   <div>
     <h2>设置可移动角色</h2>
   </div>
 
   <div>
-    <div style="display:inline-block;padding: 20px 20px;width:80%;background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
+    <div
+      style="display:inline-block;padding: 20px 20px;width:80%;background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
       <div nz-row nzGutter="24" *ngFor="let col of movePictures; let i = index">
         <div nz-col [nzSpan]="6" *ngFor="let item of movePictures[i]; let j = index">
           <nz-card>
-            <img [src]="movePictures[i][j].src" style="width: 100%;height: 67px;"  [class]="(moveObjectSelectedIndex === i * 4 + j)?'my-border':'none'"
+            <img [src]="movePictures[i][j].src" style="width: 100%;height: 67px;"
+                 [class]="(moveObjectSelectedIndex === i * 4 + j)?'my-border':'none'"
                  (click)="chooseObject(i, j)">
             <div style="text-align: center">
               <strong>{{movePictures[i][j].title}}</strong>
@@ -276,15 +396,20 @@
     <div style="vertical-align: top;display:inline-block;padding: 20px 20px;background-color: hsla(215, 100%, 95%, 1);
     border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);margin-left: 20px;width: calc(20% - 20px);">
       <div>
-        对象: <label>{{coordinate1?coordinate1:'未选中'}}</label>
+        对象: <label>{{coordinate1 ? coordinate1 : '未选中'}}</label>
       </div>
       <div>
-        <label >x坐标：</label><nz-input-number [(ngModel)]="x1" [nzMin]="-350" [nzMax]="350" [nzStep]="10" (nzBlur)="reRender()" ></nz-input-number>
+        <label>x坐标：</label>
+        <nz-input-number [(ngModel)]="x1" [nzMin]="-350" [nzMax]="350" [nzStep]="10"
+                         (nzBlur)="reRender()"></nz-input-number>
       </div>
       <div style="margin: 20px auto 20px auto">
-        <label >y坐标：</label><nz-input-number [(ngModel)]="y1" [nzMin]="-300" [nzMax]="300" [nzStep]="10" (nzBlur)="reRender()"></nz-input-number>
+        <label>y坐标：</label>
+        <nz-input-number [(ngModel)]="y1" [nzMin]="-300" [nzMax]="300" [nzStep]="10"
+                         (nzBlur)="reRender()"></nz-input-number>
       </div>
-      <button (click)="confirmCoordinate(coordinate1,x1,y1,1)" nz-button nzType="primary" [disabled]="!coordinate1">确认</button>
+      <button (click)="confirmCoordinate(coordinate1,x1,y1,1)" nz-button nzType="primary" [disabled]="!coordinate1">确认
+      </button>
     </div>
   </div>
 
@@ -292,12 +417,14 @@
     <h2>设置其他角色</h2>
   </div>
   <div>
-    <div style="display:inline-block;padding: 20px 20px;width:80%;background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
+    <div
+      style="display:inline-block;padding: 20px 20px;width:80%;background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
       <div nz-row nzGutter="24" *ngFor="let col of otherPictures; let i = index">
         <div nz-col [nzSpan]="6" *ngFor="let item of otherPictures[i]; let j = index">
           <nz-card>
-            <img [src]="otherPictures[i][j].src" style="width: 100%;height: 67px;"  [class]="(otherPictures[i][j].selected)?'my-border':'none'"
-                 (click)="chooseOtherObject(i, j)"  (mouseenter)="setCoordinate2(i,j)">
+            <img [src]="otherPictures[i][j].src" style="width: 100%;height: 67px;"
+                 [class]="(otherPictures[i][j].selected)?'my-border':'none'"
+                 (click)="chooseOtherObject(i, j)" (mouseenter)="setCoordinate2(i,j)">
             <div style="text-align: center">
               <strong>{{otherPictures[i][j].title}}</strong>
             </div>
@@ -309,16 +436,22 @@
     <div style="vertical-align: top;display:inline-block;padding: 20px 20px;
     background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);margin-left: 20px;width: calc(20% - 20px);">
       <div>
-        对象: <label>{{coordinate2?coordinate2:'未选中'}}</label>
+        对象: <label>{{coordinate2 ? coordinate2 : '未选中'}}</label>
       </div>
       <div>
-        <label >x坐标：</label><nz-input-number [(ngModel)]="x2" [nzMin]="-350" [nzMax]="350" [nzStep]="10" (nzBlur)="reRender()" ></nz-input-number>
+        <label>x坐标：</label>
+        <nz-input-number [(ngModel)]="x2" [nzMin]="-350" [nzMax]="350" [nzStep]="10"
+                         (nzBlur)="reRender()"></nz-input-number>
       </div>
       <div style="margin: 20px auto 20px auto">
-        <label >y坐标：</label><nz-input-number [(ngModel)]="y2" [nzMin]="-300" [nzMax]="300" [nzStep]="10" (nzBlur)="reRender()"></nz-input-number>
+        <label>y坐标：</label>
+        <nz-input-number [(ngModel)]="y2" [nzMin]="-300" [nzMax]="300" [nzStep]="10"
+                         (nzBlur)="reRender()"></nz-input-number>
       </div>
       <div>
-        <button (click)="confirmCoordinate(coordinate2,x2,y2,0)" nz-button nzType="primary" [disabled]="!coordinate2">确认</button>
+        <button (click)="confirmCoordinate(coordinate2,x2,y2,0)" nz-button nzType="primary" [disabled]="!coordinate2">
+          确认
+        </button>
       </div>
     </div>
   </div>
@@ -328,11 +461,13 @@
   </div>
 
   <div nz-row nzGutter="24">
-    <div nz-col [nzSpan]="24" style="padding: 20px 20px;background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
+    <div nz-col [nzSpan]="24"
+         style="padding: 20px 20px;background-color: hsla(215, 100%, 95%, 1);border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);">
       <div nz-row nzGutter="24" *ngFor="let cl of bgPictures; let a = index">
         <div nz-col [nzSpan]="8" *ngFor="let it of cl; let b = index">
           <nz-card>
-            <img [src]="it.src" style="width: 100%;"  [class]="(bgSelectedIndex === a * 3 + b)?'my-border':'none'" (click)="chooseBackgroundImg(a, b)">
+            <img [src]="it.src" style="width: 100%;" [class]="(bgSelectedIndex === a * 3 + b)?'my-border':'none'"
+                 (click)="chooseBackgroundImg(a, b)">
             <div style="text-align: center">
               <strong>{{it.title}}</strong>
             </div>

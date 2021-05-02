@@ -12,6 +12,10 @@ import { UploadFile } from 'ng-zorro-antd/upload';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
 import {NzModalService} from "ng-zorro-antd/modal";
 
+import {ClientService} from "../../services/webrtcServices/client.service"
+import {WebrtcService} from "../../services/webrtcServices/webrtc.service";
+import {CanvasWhiteboardComponent} from "ng2-canvas-whiteboard";
+
 declare var Blockly: any;
 declare var interpreter: any;
 
@@ -68,6 +72,8 @@ interface webrtcControl {
   templateUrl: './blockly.component.html',
   styles: [],
   styleUrls: ['./blockly.component.less'],
+  providers: [ClientService,WebrtcService],
+  viewProviders: [CanvasWhiteboardComponent],
 })
 export class BlocklyComponent implements OnInit {
   rtc = undefined;
@@ -151,16 +157,21 @@ export class BlocklyComponent implements OnInit {
     private notification: NzNotificationService,
     private modal: NzModalService,
     private zone : NgZone,
+    private webrtcService: WebrtcService,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
   ) {
   }
 
 
+  ngAfterViewInit(): void{
+    this.initCanvas();
+  }
+
   ngOnInit(): void {
     let crypto: cryptoType = new Crypto();
     let that = this;
     this.webrtcInit();
-    this.initCanvas();
+    // this.initCanvas();
     // 先获得场景编号，然后根据当前的模式判断应该执行的内容
     this.route.params.subscribe(function(data) {
       that.sceneID = data.id;
@@ -1136,14 +1147,15 @@ export class BlocklyComponent implements OnInit {
 
   /**************webrtc部分****************/
   connect(): void{
-    if(this.checkInputRoomID(this.webrtcControl.inputRoomIDString)){
-      this.webrtcControl.rtc.connect(
-        "wss://www.xytcloud.ltd:4433/xyt",
-        this.webrtcControl.roomID,
-        this.tokenService.get().username,
-        this.tokenService.get().name,
-        )
-    }
+    this.webrtcService.connect('a','a','a')
+    // if(this.checkInputRoomID(this.webrtcControl.inputRoomIDString)){
+    //   this.webrtcControl.rtc.connect(
+    //     "wss://www.xytcloud.ltd:4433/xyt",
+    //     this.webrtcControl.roomID,
+    //     this.tokenService.get().username,
+    //     this.tokenService.get().name,
+    //     )
+    // }
   }
 
   setStreamByName(name,stream): boolean{

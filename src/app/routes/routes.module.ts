@@ -24,6 +24,7 @@ import { AssessmentSuccessComponent} from './assessment/assessmentSucess/assessm
 import {AllSceneComponent} from './allScene/allScene.component';
 
 import {RemoteControlComponent} from "./remoteControl/remoteControl.component";
+import {CanvasWhiteboardModule} from "ng2-canvas-whiteboard";
 
 const COMPONENTS = [
   DashboardComponent,
@@ -38,7 +39,7 @@ const COMPONENTS = [
 const COMPONENTS_NOROUNT = [];
 
 @NgModule({
-  imports: [ SharedModule, RouteRoutingModule ],
+    imports: [SharedModule, RouteRoutingModule, CanvasWhiteboardModule],
   declarations: [
     ...COMPONENTS,
     ...COMPONENTS_NOROUNT,
