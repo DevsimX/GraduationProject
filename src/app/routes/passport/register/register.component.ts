@@ -1,8 +1,9 @@
 import { Component, Injector, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
-import { NzMessageService, NzNotificationService } from 'ng-zorro-antd';
 import { _HttpClient } from '@delon/theme';
+import {NzNotificationService} from "ng-zorro-antd/notification";
+import {NzMessageService} from "ng-zorro-antd/message";
 
 @Component({
   selector: 'passport-register',
@@ -128,7 +129,7 @@ export class UserRegisterComponent implements OnDestroy {
       .post('blocklyBackend/users/register', formData)
       .subscribe((res: any) => {
         if (res.msg === 'ok') {
-          this.router.navigateByUrl('/passport/register-result', {
+          this.router.navigate(['passport/register-result'], {
             queryParams: { email: data.email },
           });
         }

@@ -1,3 +1,5 @@
+import Blockly from "blockly";
+
 const blockStyles = {
   "list_blocks": {
     "colourPrimary": "#EBCB3C",

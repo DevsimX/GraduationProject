@@ -19,7 +19,7 @@ import {
   NavigationError,
   NavigationCancel,
 } from '@angular/router';
-import { NzMessageService } from 'ng-zorro-antd';
+import { NzMessageService } from 'ng-zorro-antd/message';
 import { updateHostClass } from '@delon/util';
 import { SettingsService } from '@delon/theme';
 import { environment } from '@env/environment';

@@ -1,10 +1,11 @@
 import {Component, Inject, NgZone, OnInit} from "@angular/core";
 import {SceneService} from "../../services/scene.service";
 import {ActivatedRoute} from "@angular/router";
-import {NzMessageService, NzNotificationService} from "ng-zorro-antd";
 import {NzModalService} from "ng-zorro-antd/modal";
 import {DA_SERVICE_TOKEN, ITokenService} from "@delon/auth";
 import * as $ from 'jquery';
+import {NzNotificationService} from "ng-zorro-antd/notification";
+import {NzMessageService} from "ng-zorro-antd/message";
 
 @Component({
   selector: 'app-remote-control',

@@ -25,6 +25,24 @@ import {AllSceneComponent} from './allScene/allScene.component';
 
 import {RemoteControlComponent} from "./remoteControl/remoteControl.component";
 import {CanvasWhiteboardModule} from "ng2-canvas-whiteboard";
+import {PageHeaderModule} from "@delon/abc/page-header";
+import {NzCardModule} from "ng-zorro-antd/card";
+import {NzTableModule} from "ng-zorro-antd/table";
+import {NzTagModule} from "ng-zorro-antd/tag";
+import {NzDrawerModule} from "ng-zorro-antd/drawer";
+import {NzFormModule} from "ng-zorro-antd/form";
+import {NzInputNumberModule} from "ng-zorro-antd/input-number";
+import {NzInputModule} from "ng-zorro-antd/input";
+import {NzModalModule} from "ng-zorro-antd/modal";
+import {NzAvatarModule} from "ng-zorro-antd/avatar";
+import {NzIconModule} from "ng-zorro-antd/icon";
+import {NzButtonModule} from "ng-zorro-antd/button";
+import {NzTabsModule} from "ng-zorro-antd/tabs";
+import {NzCheckboxModule} from "ng-zorro-antd/checkbox";
+import {NzDropDownModule} from "ng-zorro-antd/dropdown";
+import {NzRadioModule} from "ng-zorro-antd/radio";
+import {NzUploadModule} from "ng-zorro-antd/upload";
+import {NzBadgeModule} from "ng-zorro-antd/badge";
 
 const COMPONENTS = [
   DashboardComponent,
@@ -39,7 +57,7 @@ const COMPONENTS = [
 const COMPONENTS_NOROUNT = [];
 
 @NgModule({
-    imports: [SharedModule, RouteRoutingModule, CanvasWhiteboardModule],
+  imports: [SharedModule, RouteRoutingModule, CanvasWhiteboardModule, PageHeaderModule, NzCardModule, NzTableModule, NzTagModule, NzDrawerModule, NzFormModule, NzInputNumberModule, NzInputModule, NzModalModule, NzAvatarModule, NzIconModule, NzButtonModule, NzTabsModule, NzCheckboxModule, NzDropDownModule, NzRadioModule, NzUploadModule, NzBadgeModule],
   declarations: [
     ...COMPONENTS,
     ...COMPONENTS_NOROUNT,

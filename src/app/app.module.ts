@@ -1,6 +1,6 @@
 // tslint:disable: no-duplicate-imports
 import { NgModule, LOCALE_ID, APP_INITIALIZER, Injector } from '@angular/core';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient} from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
@@ -10,7 +10,7 @@ import { NzCarouselModule } from 'ng-zorro-antd/carousel';
 // #region default language
 // Reference: https://ng-alain.com/docs/i18n
 import { default as ngLang } from '@angular/common/locales/zh';
-import { NZ_I18N, zh_CN as zorroLang } from 'ng-zorro-antd/i18n';
+import { NZ_I18N, zh_CN as zorroLang, en_US } from 'ng-zorro-antd/i18n';
 import { DELON_LOCALE, zh_CN as delonLang } from '@delon/theme';
 const LANG = {
   abbr: 'zh',
@@ -18,15 +18,6 @@ const LANG = {
   zorro: zorroLang,
   delon: delonLang,
 };
-// register angular
-import { registerLocaleData } from '@angular/common';
-registerLocaleData(LANG.ng, LANG.abbr);
-const LANG_PROVIDES = [
-  { provide: LOCALE_ID, useValue: LANG.abbr },
-  { provide: NZ_I18N, useValue: LANG.zorro },
-  { provide: DELON_LOCALE, useValue: LANG.delon },
-];
-// #endregion
 
 // #region JSON Schema form (using @delon/form)
 import { JsonSchemaModule } from '@shared/json-schema/json-schema.module';
@@ -35,7 +26,7 @@ const FORM_MODULES = [ JsonSchemaModule ];
 
 
 // #region Http Interceptors
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { SimpleInterceptor } from '@delon/auth';
 import { DefaultInterceptor } from '@core/net/default.interceptor';
 const INTERCEPTOR_PROVIDES = [
@@ -66,12 +57,19 @@ const APPINIT_PROVIDES = [
 // #endregion
 
 import { DelonModule } from './delon.module';
-import { CoreModule } from './core/core.module';
-import { SharedModule } from './shared/shared.module';
+import { CoreModule } from '@core/core.module';
+import { SharedModule } from '@shared';
 import { AppComponent } from './app.component';
 import { RoutesModule } from './routes/routes.module';
 import { LayoutModule } from './layout/layout.module';
 import {CanvasWhiteboardModule} from "ng2-canvas-whiteboard";
+import en from '@angular/common/locales/en';
+import { FormsModule } from '@angular/forms';
+import { registerLocaleData } from '@angular/common';
+import {NzMessageModule} from "ng-zorro-antd/message";
+import {NzNotificationModule} from "ng-zorro-antd/notification";
+
+registerLocaleData(en);
 
 @NgModule({
   declarations: [
@@ -80,7 +78,6 @@ import {CanvasWhiteboardModule} from "ng2-canvas-whiteboard";
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-    HttpClientModule,
     DelonModule.forRoot(),
     CoreModule,
     SharedModule,
@@ -91,12 +88,16 @@ import {CanvasWhiteboardModule} from "ng2-canvas-whiteboard";
     NzPopconfirmModule,
     NzGridModule,
     NzGridModule,
+    NzMessageModule,
+    NzNotificationModule,
     CanvasWhiteboardModule,
+    FormsModule,
+    HttpClientModule,
   ],
   providers: [
-    ...LANG_PROVIDES,
     ...INTERCEPTOR_PROVIDES,
-    ...APPINIT_PROVIDES
+    ...APPINIT_PROVIDES,
+    { provide: NZ_I18N, useValue: en_US }
   ],
   bootstrap: [AppComponent]
 })

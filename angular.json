@@ -25,15 +25,20 @@
             "aot": false,
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "./node_modules/@ant-design/icons-angular/src/inline-svg/",
+                "output": "/assets/"
+              }
             ],
             "styles": [
               "src/styles.less"
             ],
             "scripts": [
-              "node_modules/ajv/dist/ajv.bundle.js",
+              "node_modules/ajv/dist/ajv.js",
               "node_modules/@antv/g2/dist/g2.min.js",
-              "node_modules/@antv/data-set/dist/data-set.min.js",
+              "node_modules/@antv/data-set/dist/data-set.js",
               "node_modules/@antv/g2-plugin-slider/dist/g2-plugin-slider.min.js",
               "node_modules/blockly/blockly.js",
               "node_modules/blockly/blocks.js",

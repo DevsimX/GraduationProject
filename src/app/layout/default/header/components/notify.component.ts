@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import * as distanceInWordsToNow from 'date-fns/distance_in_words_to_now';
-import { NzMessageService } from 'ng-zorro-antd';
-import { NoticeItem, NoticeIconList } from '@delon/abc';
+import {format, formatDistance, formatDistanceToNow, formatRelative, subDays} from 'date-fns'
+import { NzMessageService } from 'ng-zorro-antd/message';
+import { NoticeItem, NoticeIconList } from '@delon/abc/notice-icon';
 
 /**
  * 菜单通知
@@ -58,7 +58,7 @@ export class HeaderNotifyComponent {
     notices.forEach(item => {
       const newItem = { ...item };
       if (newItem.datetime)
-        newItem.datetime = distanceInWordsToNow(item.datetime!, {
+        newItem.datetime = formatDistanceToNow(new Date(item.datetime!), {
           locale: (window as any).__locale__,
         });
       if (newItem.extra && newItem.status) {

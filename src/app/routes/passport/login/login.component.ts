@@ -2,11 +2,13 @@ import { SettingsService, _HttpClient } from '@delon/theme';
 import { Component, OnDestroy, Inject, Optional, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { NzMessageService, NzModalService, NzNotificationService } from 'ng-zorro-antd';
+import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { SocialService, SocialOpenType, ITokenService, DA_SERVICE_TOKEN } from '@delon/auth';
-import { ReuseTabService } from '@delon/abc';
+import { ReuseTabService } from '@delon/abc/reuse-tab';
 import { environment } from '@env/environment';
 import { StartupService } from '@core';
+import {NzModalService} from "ng-zorro-antd/modal";
+import {NzMessageService} from "ng-zorro-antd/message";
 
 @Component({
   selector: 'passport-login',

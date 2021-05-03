@@ -2,15 +2,13 @@ import { Injectable } from '@angular/core';
 import {ClientService} from "./client.service";
 import {NeighboursService} from "./neighbours.service";
 import {NotificationMessage} from "../../object/webrtc/notification-message";
-import {NzNotificationService} from "ng-zorro-antd";
 
 @Injectable()
 export class WebrtcService {
 
   constructor(
     private clientService: ClientService,
-    private neighboursService: NeighboursService,
-    private notification: NzNotificationService,
+    private neighboursService: NeighboursService
   ){ }
 
   /*

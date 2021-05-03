@@ -40,38 +40,38 @@ const REUSETAB_PROVIDES = [
 
 // #region global config functions
 
-import { PageHeaderConfig } from '@delon/abc';
-export function fnPageHeaderConfig(): PageHeaderConfig {
+import {PageHeaderModule} from '@delon/abc/page-header';
+export function fnPageHeaderConfig(): PageHeaderModule {
   return {
-    ...new PageHeaderConfig(),
+    ...new PageHeaderModule(),
     homeI18n: 'home',
   };
 }
 
-import { DelonAuthConfig } from '@delon/auth';
+import {DelonAuthModule} from '@delon/auth';
 
-export function fnDelonAuthConfig(): DelonAuthConfig {
+export function fnDelonAuthConfig(): DelonAuthModule {
   return {
-    ...new DelonAuthConfig(),
+    ...new DelonAuthModule(),
     login_url: '/passport/login',
     ignores: [ new RegExp("/users/register"), new RegExp("/users/login") ]
   };
 }
 
 // tslint:disable-next-line: no-duplicate-imports
-import { STConfig } from '@delon/abc';
-export function fnSTConfig(): STConfig {
+import { STModule } from '@delon/abc/st';
+export function fnSTConfig(): STModule {
   return {
-    ...new STConfig(),
+    ...new STModule(),
     modal: { size: 'lg' },
   };
 }
 
 const GLOBAL_CONFIG_PROVIDES = [
   // TIPS：@delon/abc 有大量的全局配置信息，例如设置所有 `st` 的页码默认为 `20` 行
-  { provide: STConfig, useFactory: fnSTConfig },
-  { provide: PageHeaderConfig, useFactory: fnPageHeaderConfig },
-  { provide: DelonAuthConfig, useFactory: fnDelonAuthConfig },
+  { provide: STModule, useFactory: fnSTConfig },
+  { provide: PageHeaderModule, useFactory: fnPageHeaderConfig },
+  { provide: DelonAuthModule, useFactory: fnDelonAuthConfig },
 ];
 
 // #endregion
@@ -84,7 +84,7 @@ export class DelonModule {
     throwIfAlreadyLoaded(parentModule, 'DelonModule');
   }
 
-  static forRoot(): ModuleWithProviders {
+  static forRoot(): ModuleWithProviders<any> {
     return {
       ngModule: DelonModule,
       providers: [...REUSETAB_PROVIDES, ...GLOBAL_CONFIG_PROVIDES],

@@ -7,14 +7,15 @@ import { Crypto } from 'src/assets/crypto/crypto';
 import { SkyRTC } from 'src/assets/video/webrtc-client'
 import { SceneType, SceneService, SubmitType } from '../../services/scene.service';
 import { ActivatedRoute } from '@angular/router';
-import { NzMessageService, NzNotificationService } from 'ng-zorro-antd';
-import { UploadFile } from 'ng-zorro-antd/upload';
+import {NzNotificationService } from 'ng-zorro-antd/notification';
+import { NzUploadFile} from 'ng-zorro-antd/upload';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
 import {NzModalService} from "ng-zorro-antd/modal";
 
 import {ClientService} from "../../services/webrtcServices/client.service"
 import {WebrtcService} from "../../services/webrtcServices/webrtc.service";
 import {CanvasWhiteboardComponent} from "ng2-canvas-whiteboard";
+import {NzMessageService} from "ng-zorro-antd/message";
 
 declare var Blockly: any;
 declare var interpreter: any;
@@ -456,7 +457,7 @@ export class BlocklyComponent implements OnInit {
     this.webrtcControl.roomCamerasVisible = false;
   }
 
-  beforeUpload = (file: UploadFile): boolean => {
+  beforeUpload = (file: NzUploadFile): boolean => {
     let that = this;
     if(that.webrtcControl.fileList.length >= 2){
       this.notification.error('上传文件数量受限','一次最多选择两个文件进行上传',{nzDuration: this.errorDuration})

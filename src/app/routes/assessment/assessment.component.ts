@@ -4,7 +4,7 @@ import { _HttpClient } from '@delon/theme';
 import { ActivatedRoute, Router } from '@angular/router';
 import * as $ from 'jquery';
 import { SceneService } from '../../services/scene.service';
-import { NzNotificationService } from 'ng-zorro-antd';
+import { NzNotificationService } from 'ng-zorro-antd/notification';
 
 @Component({
   selector: 'app-assessment',
