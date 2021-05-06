@@ -48,3 +48,6 @@ Thumbs.db
 /src/assets/alain-default.less
 yarn.lock
 /_cli-tpl
+
+# generated config giles
+package-lock.json

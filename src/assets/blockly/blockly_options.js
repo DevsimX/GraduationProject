@@ -92,10 +92,10 @@ export const blockly_options = {
         </category>
 
         <category name="控制" categorystyle="control_category">
-          <block type="controls_repeat_ext"></block>
-          <block type="controls_whileUntil"></block>
-          <block type="controls_if"></block>
-          <block type="controls_ifelse"></block>
+          <block type="loop_times"></block>
+          <block type="loop_while"></block>
+          <block type="if"></block>
+          <block type="if_else"></block>
         </category>
 
         <category name="运算" categorystyle="math_category">
