@@ -10,7 +10,7 @@ const blockStyles = {
   "loop_blocks": {
     "colourPrimary": "#E8AA1C",
   },
-  "variable_blocks":{
+  "variable_blocks": {
     "colourPrimary": "#E28B17",
   },
   "math_blocks": {
@@ -92,10 +92,10 @@ export const blockly_options = {
         </category>
 
         <category name="控制" categorystyle="control_category">
-          <block type="loop_times"></block>
-          <block type="loop_while"></block>
-          <block type="if"></block>
-          <block type="if_else"></block>
+          <block type="controls_repeat_ext"></block>
+          <block type="controls_whileUntil"></block>
+          <block type="controls_if"></block>
+          <block type="controls_ifelse"></block>
         </category>
 
         <category name="运算" categorystyle="math_category">

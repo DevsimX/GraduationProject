@@ -52,13 +52,13 @@
                       {{!run ? " 运行" : "运行中"}}
                     </button>
                     <button nz-button nzType="primary" (click)="stopCode()"
-                            style="background-color: #ff4d4f;border-color: #ff4d4f;">终止
+                            style="background-color: #ff4d4f;border-color: #ff4d4f;margin-left: 10px">终止
                     </button>
-                    <button nz-button nzType="primary" (click)="clear()">重置</button>
-                    <button nz-button nzType="primary" (click)="showObjects()">查看对象</button>
-                    <button nz-button nzType="primary" (click)="show()">帮助</button>
+                    <button nz-button nzType="primary" (click)="clear()" style="margin-left: 10px">重置</button>
+                    <button nz-button nzType="primary" (click)="showObjects()" style="margin-left: 10px">查看对象</button>
+                    <button nz-button nzType="primary" (click)="show()" style="margin-left: 10px">帮助</button>
                     <button nz-button nzType="primary" (click)="uploadObjects()" *ngIf="order === 1"
-                            style="background-color: #52c41a;border-color: #52c41a;">添加素材
+                            style="background-color: #52c41a;border-color: #52c41a;margin-left: 10px">添加素材
                     </button>
 
                     <button nz-button nzType="primary" style="float: right;" (click)="submit()"
@@ -80,26 +80,9 @@
         </div>
       </nz-tab>
       <nz-tab nzTitle="在线白板">
-        <div style="width: 100%; height: 1000px; border: 1px solid black; background-color: white">
-          <canvas-whiteboard #canvasWhiteboard
-                             [drawButtonClass]="'drawButtonClass'"
-                             [drawButtonText]="'Draw'"
-                             [clearButtonClass]="'clearButtonClass'"
-                             [clearButtonText]="'Clear'"
-                             [undoButtonText]="'Undo'"
-                             [undoButtonEnabled]="true"
-                             [redoButtonText]="'Redo'"
-                             [redoButtonEnabled]="true"
-                             [colorPickerEnabled]="true"
-                             [fillColorPickerText]="'Fill'"
-                             [strokeColorPickerText]="'Stroke'"
-                             [saveDataButtonEnabled]="true"
-                             [saveDataButtonText]="'Save'"
-                             [lineWidth]="5"
-                             [strokeColor]="'rgb(0,0,0)'"
-                             [shouldDownloadDrawing]="true">
-          </canvas-whiteboard>
-        </div>
+        <ng-template nz-tab>
+          <app-whiteboard></app-whiteboard>
+        </ng-template>
       </nz-tab>
     </nz-tabset>
   </div>
@@ -165,206 +148,7 @@
   <!--  </div>-->
 
   <div style="height: 1080px;width: 440px;display: inline-block;vertical-align: top;">
-    <div style="padding: 80px 20px 0 20px;height: 100%;">
-
-      <div style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;
-      height: calc(100% - 520px);min-height:438px;padding: 20px 20px;text-align: center">
-        <h1>热线求助</h1>
-        <p style="text-indent: 2em;text-align: left">
-          如果您在学习过程中遇到了困难，您可以通过视频连线的方式向其他同学或老师寻求帮助。房间的使用采用的是即时建立的方式。你只需要<strong>输入房间号，点击加入房间即可</strong>。
-          输入的房间号如果已经存在就加入，否则就创建房间。<span nz-text><mark>如果打开音频后麦克风没有声音，请检查浏览器的麦克风权限是否以及开启以及本机麦克风是否可用。</mark></span>
-        </p>
-        <div style="margin-top: 20px;" nz-row [nzGutter]="16">
-          <div nz-col class="gutter-row" [nzSpan]="16">
-            <div id="inputRoom">
-              <input nz-input placeholder="请输入房间号(必须为纯数字)" [(ngModel)]="webrtcControl.inputRoomIDString"/>
-            </div>
-          </div>
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" [disabled]="webrtcControl.connected" id="connect" (click)="connect()" nz-button
-                    nzType="primary">加入房间
-            </button>
-          </div>
-        </div>
-        <div style="margin-top: 25px;" nz-row [nzGutter]="16">
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" nz-button nz-dropdown [nzDropdownMenu]="deviceMenu"
-                    [nzDisabled]="!webrtcControl.mediaUsable">
-              设备权限
-              <i nz-icon nzType="down"></i>
-            </button>
-            <nz-dropdown-menu #deviceMenu="nzDropdownMenu">
-              <ul nz-menu>
-                <li nz-menu-item>
-                  <p>视频流权限</p>
-                  <nz-radio-group [(ngModel)]="webrtcControl.videoControl"
-                                  (ngModelChange)="videoControlChanged([$event])">
-                    <label nz-radio nzValue="open">开启</label>
-                    <label nz-radio nzValue="close">关闭</label>
-                  </nz-radio-group>
-                </li>
-                <li nz-menu-item>
-                  <p>音频流权限</p>
-                  <nz-radio-group [(ngModel)]="webrtcControl.audioControl"
-                                  (ngModelChange)="audioControlChanged([$event])">
-                    <label nz-radio nzValue="open">开启</label>
-                    <label nz-radio nzValue="close">关闭</label>
-                  </nz-radio-group>
-                </li>
-              </ul>
-            </nz-dropdown-menu>
-          </div>
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" nz-button nz-dropdown [nzDropdownMenu]="shareMenu"
-                    [nzDisabled]="!webrtcControl.mediaUsable">
-              共享内容
-              <i nz-icon nzType="down"></i>
-            </button>
-            <nz-dropdown-menu #shareMenu="nzDropdownMenu">
-              <nz-radio-group [(ngModel)]="webrtcControl.shareValue" (ngModelChange)="shareDeviceChange([$event])">
-                <ul nz-menu>
-                  <li nz-menu-item>
-                    <label nz-radio nzValue="shareCamera">共享摄像头</label>
-                  </li>
-                  <li nz-menu-item>
-                    <label nz-radio nzValue="shareDesktop">共享屏幕</label>
-                  </li>
-                  <li nz-menu-item>
-                    <label nzDisabled nz-radio nzValue="shareRemoteControl">远程控制</label>
-                  </li>
-                </ul>
-              </nz-radio-group>
-            </nz-dropdown-menu>
-          </div>
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <button style="width: 110px" [disabled]="!webrtcControl.connected" id="disconnect" (click)="disconnect()"
-                    nz-button nzType="primary">退出房间
-            </button>
-          </div>
-        </div>
-        <div style="margin-top: 25px;" nz-row [nzGutter]="16">
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <nz-upload [(nzFileList)]="webrtcControl.fileList" [nzBeforeUpload]="beforeUpload">
-              <button [disabled]="!webrtcControl.connected" style="width: 110px" nz-button><i nz-icon
-                                                                                              nzType="upload"></i><span>选择文件</span>
-              </button>
-            </nz-upload>
-          </div>
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <button
-              style="width: 110px"
-              nz-button
-              [nzType]="'primary'"
-              [nzLoading]=""
-              (click)="shareFiles()"
-              [disabled]="!webrtcControl.connected || webrtcControl.fileList.length == 0"
-            >
-              分享文件
-              <!--              {{ uploading ? 'Uploading' : 'Start Upload' }}-->
-            </button>
-          </div>
-          <div nz-col class="gutter-row" [nzSpan]="8">
-            <nz-badge [nzCount]="webrtcControl.unreadChatNum">
-              <button [disabled]="!webrtcControl.connected" style="width: 110px" nz-button nzType="primary"
-                      (click)="openChatRoom()">聊天室
-              </button>
-            </nz-badge>
-            <nz-drawer
-              [nzWidth]="750"
-              [nzClosable]="false"
-              [nzVisible]="chatRoomVisible"
-              nzPlacement="right"
-              nzTitle="聊天室"
-              (nzOnClose)="closeChatRoom()"
-            >
-              <div style="width: 100%;height: 700px;overflow: auto;border: 2px solid #cbc8c8">
-                <div style="margin:20px">
-                  <nz-comment *ngFor="let chat of webrtcControl.chatHistory" [nzAuthor]="chat.name"
-                              [nzDatetime]="chat.time">
-                    <nz-avatar
-                      nz-comment-avatar
-                      nzIcon="user"
-                      nzSrc="//zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png"
-                    ></nz-avatar>
-                    <nz-comment-content>
-                      <p>
-                        {{chat.message}}
-                      </p>
-                    </nz-comment-content>
-                  </nz-comment>
-                </div>
-              </div>
-              <div style="margin-top: 10px;height: calc(100% - 700px)" nz-row [nzGutter]="16" nzType="flex"
-                   nzAlign="bottom">
-                <div nz-col class="gutter-row" [nzSpan]="18">
-                  <textarea placeholder="输入你要发送的消息" style="width: 100%;height: 100px;" rows="4" nz-input
-                            [(ngModel)]="webrtcControl.chatMessage"></textarea>
-                </div>
-                <div nz-col class="gutter-row" [nzSpan]="6">
-                  <div>
-                    <button style="width: 100%;height: 45px;font-size: 17px;" nzGhost nz-button nzType="danger"
-                            (click)="clearChatHistory()">清空聊天记录
-                    </button>
-                  </div>
-                  <div>
-                    <button style="width: 100%;height: 45px;margin-top: 10px;font-size: 17px;" nzGhost nz-button
-                            nzType="primary" (click)="broadcastMessage()">发送
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </nz-drawer>
-          </div>
-        </div>
-      </div>
-
-      <div
-        style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);
-        background-color: white;height: 70px;margin-top: 25px;
-        padding: 20px 20px;text-align: center">
-        <label style="font-size: 17px;margin-right: 20px;font-weight: bold">远程控制:</label>
-        <nz-select disabled="true" style="width: 250px" nzShowSearch
-                   nzPlaceHolder="选择你想远程控制的用户" [(ngModel)]="webrtcControl.remoteControlSocketId"
-                   (ngModelChange)="remoteControlStart([$event])">
-          <nz-option *ngFor="let mediaStream of webrtcControl.mediaStreams.slice(1)" [nzLabel]="mediaStream.name"
-                     [nzValue]="mediaStream.socketId"></nz-option>
-        </nz-select>
-      </div>
-
-      <div
-        style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 400px;margin-top: 25px;">
-        <nz-card [ngStyle]="{display: webrtcControl.mediaStreams.length === 0?'none':'inline'}"
-                 style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
-          <video controls="controls" [volume]="0.0" *ngIf="webrtcControl.mediaStreams.length > 0"
-                 [srcObject]="webrtcControl.mediaStreams[0].stream" autoplay width="350px"></video>
-        </nz-card>
-        <nz-drawer
-          [nzHeight]="440"
-          [nzClosable]="true"
-          [nzVisible]="webrtcControl.roomCamerasVisible"
-          nzPlacement="bottom"
-          nzMask="false"
-          (nzOnClose)="closeCameras()"
-        >
-          <nz-empty *ngIf="webrtcControl.mediaStreams.length <= 1"></nz-empty>
-          <nz-card style="max-width: 400px;display: inline-block;margin-right: 60px;text-align: center;"
-                   *ngFor="let media of webrtcControl.mediaStreams.slice(1)" [nzTitle]="media.name+'的摄像头'">
-            <video controls="controls"
-                   [srcObject]="media.stream" autoplay width="350px"></video>
-          </nz-card>
-        </nz-drawer>
-        <ng-template #extraTemplate>
-          <button [disabled]="!webrtcControl.connected" style="width: 160px" nz-button nzType="primary"
-                  (click)="openCameras()">查看所有人的摄像头
-          </button>
-        </ng-template>
-        <!--        <div id="videos" style="height: 500px;">-->
-        <!--          <video [srcObject]="webrtcControl.localMediaStream" id="me" autoplay width="400px"></video>-->
-        <!--        </div>-->
-
-      </div>
-
-    </div>
+    <app-blockly-webrtc></app-blockly-webrtc>
   </div>
 
 </div>

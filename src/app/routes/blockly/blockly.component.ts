@@ -12,12 +12,10 @@ import { NzUploadFile} from 'ng-zorro-antd/upload';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
 import {NzModalService} from "ng-zorro-antd/modal";
 
-import {ClientService} from "../../services/webrtcServices/client.service"
 import {WebrtcService} from "../../services/webrtcServices/webrtc.service";
 import {CanvasWhiteboardComponent} from "ng2-canvas-whiteboard";
 import {NzMessageService} from "ng-zorro-antd/message";
-
-declare var Blockly: any;
+import * as Blockly from 'blockly';
 declare var interpreter: any;
 
 interface CryptoType{
@@ -73,7 +71,7 @@ interface webrtcControl {
   templateUrl: './blockly.component.html',
   styles: [],
   styleUrls: ['./blockly.component.less'],
-  providers: [ClientService,WebrtcService],
+  providers: [],
   viewProviders: [CanvasWhiteboardComponent],
 })
 export class BlocklyComponent implements OnInit {
@@ -795,7 +793,7 @@ export class BlocklyComponent implements OnInit {
     }
     this.run = true;
     let that = this;
-    let code = Blockly.JavaScript.workspaceToCode(this.workspace);
+    let code = (Blockly as any).JavaScript.workspaceToCode(this.workspace);
     interpreter.setObjects({ ...this.objects, show: this.notification, cWidth: this.cWidth, cHeight: this.cHeight });
     this.h = setInterval(function() {
       if (interpreter.next()) {
@@ -1033,7 +1031,7 @@ export class BlocklyComponent implements OnInit {
         this.isOkLoading = false;
         return;
       }
-      if(!this.check_way && !Blockly.JavaScript.workspaceToCode(this.workspace)){
+      if(!this.check_way && !(Blockly as any).JavaScript.workspaceToCode(this.workspace)){
         this.notification.error('失败', '机器核定场景必须搭建积木');
         this.isVisible = false;
         this.isOkLoading = false;
@@ -1148,7 +1146,6 @@ export class BlocklyComponent implements OnInit {
 
   /**************webrtc部分****************/
   connect(): void{
-    this.webrtcService.connect('a','a','a')
     // if(this.checkInputRoomID(this.webrtcControl.inputRoomIDString)){
     //   this.webrtcControl.rtc.connect(
     //     "wss://www.xytcloud.ltd:4433/xyt",

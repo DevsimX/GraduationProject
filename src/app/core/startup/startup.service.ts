@@ -1,8 +1,5 @@
 import { Injectable, Injector, Inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { zip } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 import { MenuService, SettingsService, TitleService, ALAIN_I18N_TOKEN } from '@delon/theme';
 import { DA_SERVICE_TOKEN, ITokenService } from '@delon/auth';
 import { ACLService } from '@delon/acl';
@@ -10,6 +7,13 @@ import { ACLService } from '@delon/acl';
 import { NzIconService } from 'ng-zorro-antd/icon';
 import { ICONS_AUTO } from '../../../style-icons-auto';
 import { ICONS } from '../../../style-icons';
+
+import { NzSafeAny } from 'ng-zorro-antd/core/types';
+import { zip } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { I18NService } from '../i18n/i18n.service';
+import {TranslateService} from "@ngx-translate/core";
+
 
 /**
  * Used for application startup
@@ -24,8 +28,10 @@ export class StartupService {
     private aclService: ACLService,
     private titleService: TitleService,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
+    @Inject(ALAIN_I18N_TOKEN) private i18n: I18NService,
     private httpClient: HttpClient,
     private injector: Injector,
+    private translate: TranslateService,
   ) {
     iconSrv.addIcon(...ICONS_AUTO, ...ICONS);
   }
@@ -110,6 +116,11 @@ export class StartupService {
             text: '提交记录',
             link: '/progress',
             icon: { type: 'icon', value: 'database' },
+          },
+          {
+            text: 'test',
+            link: '/test',
+            icon: { type: 'icon', value: 'audit' },
           },
         ],
       },

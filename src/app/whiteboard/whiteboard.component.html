@@ -1,0 +1,25 @@
+<div style="width: 100%; height: 1000px; border: 1px solid black; background-color: white">
+  <canvas-whiteboard #canvasWhiteboard
+                     (onBatchUpdate)="onCanvasDraw($event)"
+                     (onClear)="onCanvasClear()"
+                     (onUndo)="onCanvasUndo($event)"
+                     (onRedo)="onCanvasRedo($event)"
+                     (onSave)="onCanvasSave($event)"
+                     [drawButtonClass]="'drawButtonClass'"
+                     [drawButtonText]="'绘画'"
+                     [clearButtonClass]="'clearButtonClass'"
+                     [clearButtonText]="'清除画板'"
+                     [undoButtonText]="'撤销'"
+                     [undoButtonEnabled]="true"
+                     [redoButtonText]="'重做'"
+                     [redoButtonEnabled]="true"
+                     [colorPickerEnabled]="true"
+                     [fillColorPickerText]="'Fill'"
+                     [strokeColorPickerText]="'Stroke'"
+                     [saveDataButtonEnabled]="true"
+                     [saveDataButtonText]="'保存到本地'"
+                     [lineWidth]="5"
+                     [strokeColor]="'rgb(0,0,0)'"
+                     [shouldDownloadDrawing]="true">
+  </canvas-whiteboard>
+</div>

@@ -42,7 +42,7 @@ export var SkyRTC = function () {
   function log(text) {
     var time = new Date();
 
-    // console.log("[" + time.toLocaleTimeString() + "] " + text);
+    console.log("[" + time.toLocaleTimeString() + "] " + text);
   }
 
   function log_error(text) {

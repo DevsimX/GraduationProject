@@ -43,6 +43,10 @@ import {NzDropDownModule} from "ng-zorro-antd/dropdown";
 import {NzRadioModule} from "ng-zorro-antd/radio";
 import {NzUploadModule} from "ng-zorro-antd/upload";
 import {NzBadgeModule} from "ng-zorro-antd/badge";
+import {NzEmptyModule} from "ng-zorro-antd/empty";
+import {WhiteboardComponent} from "../whiteboard/whiteboard.component";
+import { BlocklyWebrtcComponent } from './blockly/blockly-webrtc/blockly-webrtc.component';
+import {NzCommentModule} from "ng-zorro-antd/comment";
 
 const COMPONENTS = [
   DashboardComponent,
@@ -57,7 +61,7 @@ const COMPONENTS = [
 const COMPONENTS_NOROUNT = [];
 
 @NgModule({
-  imports: [SharedModule, RouteRoutingModule, CanvasWhiteboardModule, PageHeaderModule, NzCardModule, NzTableModule, NzTagModule, NzDrawerModule, NzFormModule, NzInputNumberModule, NzInputModule, NzModalModule, NzAvatarModule, NzIconModule, NzButtonModule, NzTabsModule, NzCheckboxModule, NzDropDownModule, NzRadioModule, NzUploadModule, NzBadgeModule],
+  imports: [NzCommentModule,NzEmptyModule,SharedModule, RouteRoutingModule, CanvasWhiteboardModule, PageHeaderModule, NzCardModule, NzTableModule, NzTagModule, NzDrawerModule, NzFormModule, NzInputNumberModule, NzInputModule, NzModalModule, NzAvatarModule, NzIconModule, NzButtonModule, NzTabsModule, NzCheckboxModule, NzDropDownModule, NzRadioModule, NzUploadModule, NzBadgeModule],
   declarations: [
     ...COMPONENTS,
     ...COMPONENTS_NOROUNT,
@@ -75,6 +79,8 @@ const COMPONENTS_NOROUNT = [];
     AllSceneComponent,
 
     RemoteControlComponent,
+    WhiteboardComponent,
+    BlocklyWebrtcComponent,
   ],
   entryComponents: COMPONENTS_NOROUNT
 })

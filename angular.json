@@ -43,6 +43,8 @@
               "node_modules/blockly/blockly.js",
               "node_modules/blockly/blocks.js",
               "node_modules/blockly/javascript.js",
+              "node_modules/blockly/blockly_compressed.js",
+              "node_modules/blockly/javascript_compressed.js",
               "node_modules/blockly/msg/en.js",
               "src/assets/blockly/interpreter.js",
               "src/assets/blockly/custom_blocks.js",
