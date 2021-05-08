@@ -15,8 +15,10 @@ import {NzModalService} from "ng-zorro-antd/modal";
 import {WebrtcService} from "../../services/webrtcServices/webrtc.service";
 import {CanvasWhiteboardComponent} from "ng2-canvas-whiteboard";
 import {NzMessageService} from "ng-zorro-antd/message";
-import * as Blockly from 'blockly';
+import {NzTabsCanDeactivateFn} from "ng-zorro-antd/tabs";
+import {Observable} from "rxjs";
 declare var interpreter: any;
+declare var Blockly: any;
 
 interface CryptoType{
   encode?:any;
@@ -643,6 +645,8 @@ export class BlocklyComponent implements OnInit {
   initCanvas() {
     const blocklyDiv = document.getElementById('blocklyDiv');
     this.workspace = Blockly.inject(blocklyDiv, blockly_options);
+    this.workspace.addChangeListener(this.test)
+    this.workspace.removeChangeListener(this.test1)
     let cnv = window.document.getElementById('cnvMain') as HTMLCanvasElement;
     this.cWidth = cnv.width;
     this.cHeight = cnv.height;
@@ -655,6 +659,14 @@ export class BlocklyComponent implements OnInit {
         event.returnValue = "确定离开当前页面吗？";
       }
     };
+  }
+
+  test(event){
+    console.log(event)
+  }
+
+  test1(event){
+    console.log(event)
   }
 
   addObjectsToCanvas(objects) {
@@ -1290,5 +1302,31 @@ export class BlocklyComponent implements OnInit {
     this.buttonMsg = '下一步';
     this.currentIndex = 0;
     this.helpIsVisible = true;
+  }
+
+  canDeactivate: NzTabsCanDeactivateFn = (fromIndex: number, toIndex: number) => {
+    switch (fromIndex) {
+      case 1:
+        return this.confirm();
+      default:
+        return true;
+    }
+  };
+
+  private confirm(): Observable<boolean> {
+    return new Observable(observer => {
+      this.modal.confirm({
+        nzTitle: '你确定要离开在线白板界面吗?',
+        nzContent: '如果离开在线白板界面，当前的白板内容无法保存，将被清除，请谨慎操作。',
+        nzOnOk: () => {
+          observer.next(true);
+          observer.complete();
+        },
+        nzOnCancel: () => {
+          observer.next(false);
+          observer.complete();
+        }
+      });
+    });
   }
 }

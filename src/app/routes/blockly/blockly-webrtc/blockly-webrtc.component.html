@@ -2,7 +2,7 @@
 
   <div style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;
       height: calc(100% - 520px);min-height:438px;padding: 20px 20px;text-align: center">
-    <h1>热线求助</h1>
+    <h1>多人协助</h1>
     <p style="text-indent: 2em;text-align: left">
       如果您在学习过程中遇到了困难，您可以通过视频连线的方式向其他同学或老师寻求帮助。房间的使用采用的是即时建立的方式。你只需要<strong>输入房间号，点击加入房间即可</strong>。
       输入的房间号如果已经存在就加入，否则就创建房间。<span><mark>如果打开音频后麦克风没有声音，请检查浏览器的麦克风权限是否以及开启以及本机麦克风是否可用。</mark></span>
@@ -157,6 +157,9 @@
         background-color: white;height: 70px;margin-top: 25px;
         padding: 20px 20px;text-align: center">
     <label style="font-size: 17px;margin-right: 20px;font-weight: bold">远程控制:</label>
+    <nz-select disabled="true" style="width: 250px" nzShowSearch
+               nzPlaceHolder="选择你想远程控制的用户" >
+    </nz-select>
 <!--    <nz-select disabled="true" style="width: 250px" nzShowSearch-->
 <!--               nzPlaceHolder="选择你想远程控制的用户" [(ngModel)]="webrtcControl.remoteControlSocketId"-->
 <!--               (ngModelChange)="remoteControlStart([$event])">-->

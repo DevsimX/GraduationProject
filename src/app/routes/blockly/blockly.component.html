@@ -12,7 +12,7 @@
   style="height: 1100px;width: 100%;min-width:1400px;background-color: hsla(215, 100%, 95%, 1);padding-bottom: 30px">
 
   <div style="height: 1080px;width: calc(100% - 440px);display: inline-block;">
-    <nz-tabset style="padding: 20px 20px 0 20px;height: 100%;">
+    <nz-tabset [nzCanDeactivate]="canDeactivate" style="padding: 20px 20px 0 20px;height: 100%;">
       <nz-tab nzTitle="学习界面">
         <div style="height: 1000px;width: calc(100% - 700px);display: inline-block;">
           <div style="width: 100%;height: 100%;">
@@ -79,7 +79,7 @@
           </div>
         </div>
       </nz-tab>
-      <nz-tab nzTitle="在线白板">
+      <nz-tab nzTitle="在线白板" nzDisabled>
         <ng-template nz-tab>
           <app-whiteboard></app-whiteboard>
         </ng-template>

@@ -36,14 +36,8 @@
               "src/styles.less"
             ],
             "scripts": [
-              "node_modules/ajv/dist/ajv.js",
-              "node_modules/@antv/g2/dist/g2.min.js",
-              "node_modules/@antv/data-set/dist/data-set.js",
-              "node_modules/@antv/g2-plugin-slider/dist/g2-plugin-slider.min.js",
-              "node_modules/blockly/blockly.js",
-              "node_modules/blockly/blocks.js",
-              "node_modules/blockly/javascript.js",
               "node_modules/blockly/blockly_compressed.js",
+              "node_modules/blockly/blocks_compressed.js",
               "node_modules/blockly/javascript_compressed.js",
               "node_modules/blockly/msg/en.js",
               "src/assets/blockly/interpreter.js",

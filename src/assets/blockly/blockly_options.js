@@ -64,6 +64,14 @@ export const blockly_options = {
     colour: '#ccc',
     snap: true
   },
+  zoom:
+    {controls: true,
+      wheel: true,
+      startScale: 1.0,
+      maxScale: 3,
+      minScale: 0.3,
+      scaleSpeed: 1.2,
+      pinch: true},
   trashcan: true,
   move: {
     scrollbars: true,
