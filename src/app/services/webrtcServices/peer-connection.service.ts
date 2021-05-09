@@ -34,6 +34,7 @@ export class PeerConnectionService {
         undefined,
         [],
         undefined);
+      that.createPeerConnection(i);
     }
   }
 
@@ -161,7 +162,7 @@ export class PeerConnectionService {
     @input: event.channel is the created data channel
    */
     peerConnection.ondatachannel = function (evt) {
-      that.dataChannelService.addDataChannel(socketId, evt.channel);
+      that.dataChannelService.bindEventsToDataChannel(socketId, evt.channel);
     };
 
     peerConnection.onconnectionstatechange = function (event) {

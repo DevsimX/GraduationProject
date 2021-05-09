@@ -31,7 +31,7 @@ export class DataChannelService {
   }
 
   //为Data channel绑定相应的事件回调函数
-  addDataChannel(socketId: string, channel: RTCDataChannel) {
+  bindEventsToDataChannel(socketId: string, channel: RTCDataChannel) {
     let that = this;
     let neighbour = that.neighbourService.getNeighbourBySocketId(socketId);
     channel.onopen = function () {
@@ -69,6 +69,20 @@ export class DataChannelService {
     };
 
     neighbour.data_channel = channel;
+  }
+
+  //为某一个peer connection添加data channel
+  createDataChannel(socketId: string, peerConnection: RTCPeerConnection,label){
+    let channel;
+    try {
+      channel = peerConnection.createDataChannel(label);
+    } catch (error) {
+      //TODO
+      this.logger.log_error(error);
+    }
+
+    this.bindEventsToDataChannel(socketId,channel);
+    return channel;
   }
 
   /*

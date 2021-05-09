@@ -20,6 +20,10 @@ export class ConstantService {
       }
     ]
   };
+  public getUserMedia = (
+    navigator.mediaDevices.getUserMedia ||//最新的标准API
+    navigator.getUserMedia //旧版API
+  );
   packetSize = 1000
 
   constructor() { }

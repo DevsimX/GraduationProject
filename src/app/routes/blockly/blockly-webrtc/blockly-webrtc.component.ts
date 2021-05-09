@@ -6,6 +6,9 @@ import {NzMessageService} from "ng-zorro-antd/message";
 import {DA_SERVICE_TOKEN, ITokenService} from "@delon/auth";
 import {NzUploadFile} from "ng-zorro-antd/upload";
 import {WebrtcUtilService} from "../../../services/webrtcServices/webrtc-util.service";
+import {catchError} from "rxjs/operators";
+import {HttpClient, HttpErrorResponse} from "@angular/common/http";
+import {Subject, throwError} from "rxjs";
 
 @Component({
   selector: 'app-blockly-webrtc',
@@ -21,6 +24,7 @@ export class BlocklyWebrtcComponent implements OnInit {
   chatRoomVisible: boolean = false;
   files: NzUploadFile[] = [];
   chatMessage: string = '';
+  connectionError:Subject<string> = new Subject<string>();
 
 
   constructor(
@@ -28,18 +32,54 @@ export class BlocklyWebrtcComponent implements OnInit {
     public webrtcUtilService: WebrtcUtilService,
     private notification: NzNotificationService,
     private message: NzMessageService,
+    private http: HttpClient,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
   ) {
   }
 
   ngOnInit(): void {
-    console.log(this.webrtcUtilService.mediaUsable)
+    this.connectionError.subscribe({
+      next: (err) => this.notification.error('服务器连接错误',err)
+    })
+
+    this.webrtcService.connectedSubject.subscribe({
+      next: (info) => {
+        this.message.success('你已经连接到房间中');
+        this.webrtcService.createStream({
+          "video": true,
+          "audio": true
+        })
+      }
+    })
+
+    this.webrtcService.notifySubject.subscribe({
+      next: (info) => {
+        switch (info.type) {
+          case 'success':
+            this.notification.success(info.title,info.content)
+            break;
+          case 'error':
+            this.message.error(info.title,info.content)
+            break;
+        }
+      }
+    })
+
+    this.webrtcService.messageSubject.subscribe({
+      next: (info) => {
+        switch (info.type) {
+          case 'success':
+            this.message.success(info.content)
+            break;
+          case 'error':
+            this.message.error(info.content)
+            break;
+        }
+      }
+    })
   }
 
   connectToServer(): void {
-    if(!this.webrtcService.testServerConnection()){
-      return
-    }
     if (this.checkRoomIDLegality(this.input_room_id_string)) {
       let room_id_int = parseInt(this.input_room_id_string);
       let username = this.tokenService.get().username;
@@ -47,19 +87,78 @@ export class BlocklyWebrtcComponent implements OnInit {
 
       let res = this.webrtcService.connect(room_id_int, username, name);
 
-      if (!res) {
+      if (res) {
         this.notification.error(
           '连接服务器失败',
           res,
         )
       } else {
-        this.listenToWebrtcService()
+        //TODO
       }
     }
   }
 
   disconnectFromServer() {
     this.webrtcService.clear();
+  }
+
+  testServerConnection(){
+    this.http.get(
+      'https://xytcloud.ltd:8001/testConnect',
+      {
+        observe: 'response',
+        responseType: 'text'
+      }
+    ).pipe(
+      catchError(this.handleError)
+    ).subscribe(res => {
+      if (res.status == 200 && res.ok){
+        this.testUsernameDuplicated();
+      }else {
+        this.connectionError.next('something wrong happens with the backend')
+      }
+    });
+  }
+
+  testUsernameDuplicated(){
+    let username = this.tokenService.get().username;
+    this.http.get(
+      'https://xytcloud.ltd:8001/testUsernameDuplicated',
+      {
+        observe: 'response',
+        responseType: 'text',
+        params: {'username':username}
+      }
+    ).pipe(
+      catchError(this.handleError)
+    ).subscribe(res => {
+      let responseText = res.statusText;
+      if(responseText === 'ok'){
+        this.connectToServer();
+      }else if(responseText === 'username duplicated'){
+        this.connectionError.next('你已经在服务器中，请勿重复连接。')
+      }else {
+        this.connectionError.next(responseText);
+      }
+    });
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    if (error.error instanceof ErrorEvent) {
+      // A client-side or network error occurred. Handle it accordingly.
+      console.error('An error occurred:', error.error.message);
+    } else {
+      // The backend returned an unsuccessful response code.
+      // The response body may contain clues as to what went wrong.
+      console.error(
+        `Backend returned code ${error.status}, ` +
+        `body was: ${error.error}`);
+    }
+    //TODO
+    this.connectionError.next(error.error.message);
+    // Return an observable with a user-facing error message.
+    return throwError(
+      'Something bad happened; please try again later.');
   }
 
   nzBeforeUpload(file: NzUploadFile): boolean {
@@ -71,11 +170,7 @@ export class BlocklyWebrtcComponent implements OnInit {
     return false;
   };
 
-  clearChatHistory() {
-    this.webrtcUtilService.chatMessages = [];
-  }
-
-  broadcastMessage() {
+  sendChatMessageToAll() {
     let time = this.getTime();
     this.webrtcService.broadcast(this.chatMessage, time);
     this.webrtcUtilService.chatMessages.push({
@@ -84,6 +179,10 @@ export class BlocklyWebrtcComponent implements OnInit {
       message: this.chatMessage,
     })
     this.chatMessage = '';
+  }
+
+  clearChatHistory() {
+    this.webrtcUtilService.chatMessages = [];
   }
 
   changeShareDevice(event) {
@@ -106,13 +205,13 @@ export class BlocklyWebrtcComponent implements OnInit {
         this.message.success(
           '摄像头已关闭'
         )
-        this.webrtcService.changeVideoStreamState(false);
+        this.webrtcService.changeVideoStreamEnabledState(false);
         break;
       case "open":
         this.message.success(
           '摄像头已打开'
         )
-        this.webrtcService.changeVideoStreamState(true);
+        this.webrtcService.changeVideoStreamEnabledState(true);
         break;
       default:
         this.notification.error(
@@ -130,13 +229,13 @@ export class BlocklyWebrtcComponent implements OnInit {
         this.message.success(
           '音频已关闭',
         )
-        this.webrtcService.changeAudioStreamState(false);
+        this.webrtcService.changeAudioStreamEnabledState(false);
         break;
       case "open":
         this.message.success(
           '音频已打开',
         )
-        this.webrtcService.changeAudioStreamState(true);
+        this.webrtcService.changeAudioStreamEnabledState(true);
         break;
       default:
         this.notification.error(

@@ -14,7 +14,7 @@
         </div>
       </div>
       <div nz-col class="gutter-row" [nzSpan]="8">
-        <button style="width: 110px" [disabled]="webrtcUtilService.connected" id="connect" (click)="connectToServer()"
+        <button style="width: 110px" [disabled]="webrtcUtilService.connected" id="connect" (click)="testServerConnection()"
                 nz-button
                 nzType="primary">加入房间
         </button>
@@ -142,7 +142,7 @@
               </div>
               <div>
                 <button style="width: 100%;height: 45px;margin-top: 10px;font-size: 17px;" nzGhost nz-button
-                        nzType="primary" (click)="broadcastMessage()">发送
+                        nzType="primary" (click)="sendChatMessageToAll()">发送
                 </button>
               </div>
             </div>
@@ -170,7 +170,7 @@
 
   <div
     style="border-radius: 0.5rem;border: 0.0625rem solid hsla(0, 0%, 0%, 0.15);background-color: white;height: 400px;margin-top: 25px;">
-    <nz-card [ngStyle]="{display: webrtcUtilService.localMediaStream?'none':'inline'}"
+    <nz-card [ngStyle]="{display: webrtcUtilService.localMediaStream?'inline':'none'}"
              style="width:100%;height: 100%" nzTitle="我的摄像头" [nzExtra]="extraTemplate">
       <video controls="controls" [volume]="0.0" *ngIf="webrtcUtilService.localMediaStream"
              [srcObject]="webrtcUtilService.localMediaStream" autoplay width="350px"></video>
