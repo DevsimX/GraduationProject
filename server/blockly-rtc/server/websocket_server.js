@@ -55,8 +55,11 @@ io.on('connection', (user) => {
 
 
 async function onConnect(user) {
-  user.on('connectUser', async (room, callback) => {
+  user.on('joinRoom', async (room,name, callback) => {
     await user.join(room);
+    //TODO store the name and socket id in database
+
+    //info client
     callback();
   });
 }

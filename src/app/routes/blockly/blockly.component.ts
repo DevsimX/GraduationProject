@@ -1,6 +1,7 @@
-import {Component, Inject, OnInit} from '@angular/core';
+import { Component, EventEmitter, Inject, OnInit } from '@angular/core';
 
 import {blockly_options} from 'src/assets/blockly/blockly_options.js';
+import WorkspaceClient from 'src/assets/blockly/WorkspaceClient.js'
 
 import {Crypto} from 'src/assets/crypto/crypto';
 import {SceneType, SceneService} from '../../services/scene.service';
@@ -79,6 +80,9 @@ export class BlocklyComponent implements OnInit {
   isOkLoading = false;
   order = 0;
   drawerVisible = false;
+
+  // workspace params
+
 
   // 创建场景
   movePictures: any[][] = []; // 可移动角色图片集
@@ -263,10 +267,13 @@ export class BlocklyComponent implements OnInit {
   }
 
   initCanvas() {
+    //blockly
     const blocklyDiv = document.getElementById('blocklyDiv');
     this.workspace = Blockly.inject(blocklyDiv, blockly_options);
     this.workspace.addChangeListener(this.test)
     this.workspace.removeChangeListener(this.test1)
+
+    //canvas
     let cnv = window.document.getElementById('cnvMain') as HTMLCanvasElement;
     this.cWidth = cnv.width;
     this.cHeight = cnv.height;
@@ -806,6 +813,12 @@ export class BlocklyComponent implements OnInit {
     this.currentIndex = 0;
     this.helpIsVisible = true;
   }
+
+  /*
+  workspace sync and update to server part
+   */
+
+
 
   canDeactivate: NzTabsCanDeactivateFn = (fromIndex: number, toIndex: number) => {
     switch (fromIndex) {

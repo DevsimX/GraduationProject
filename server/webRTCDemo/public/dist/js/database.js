@@ -29,6 +29,7 @@ const Blocky = require('blockly');
 class Database {
   constructor() {
     this.db = db;
+    this.snapshotMap = {}//key is room, value is snapshot
     this.snapshot = {
       serverId: 0,
       xml: '<xml xmlns="https://developers.google.com/blockly/xml"/>'
@@ -45,17 +46,17 @@ class Database {
   query(serverId) {
     return new Promise ((resolve, reject) => {
       this.db.all(`SELECT * from eventsdb WHERE serverId > ${serverId};`,
-          (err, entries) => {
-        if (err) {
-          console.error(err.message);
-          reject('Failed to query the database.');
-        } else {
-          entries.forEach((entry) => {
-            entry.events = JSON.parse(entry.events);
-          });
-          resolve(entries);
-        };
-      });
+        (err, entries) => {
+          if (err) {
+            console.error(err.message);
+            reject('Failed to query the database.');
+          } else {
+            entries.forEach((entry) => {
+              entry.events = JSON.parse(entry.events);
+            });
+            resolve(entries);
+          };
+        });
     });
   };
 
@@ -99,13 +100,13 @@ class Database {
       this.db.serialize(() => {
         this.db.run(`INSERT INTO eventsdb
             (events, workspaceId, entryNumber) VALUES(?,?,?)`,
-            [JSON.stringify(entry.events), entry.workspaceId, entry.entryNumber],
-            (err) => {
-          if (err) {
-            console.error(err.message);
-            reject('Failed to write to the database.');
-          };
-        });
+          [JSON.stringify(entry.events), entry.workspaceId, entry.entryNumber],
+          (err) => {
+            if (err) {
+              console.error(err.message);
+              reject('Failed to write to the database.');
+            };
+          });
         this.db.each(`SELECT last_insert_rowid() as serverId;`, (err, lastServerId) => {
           if (err) {
             console.error(err.message);
@@ -129,14 +130,14 @@ class Database {
     return new Promise((resolve, reject) => {
       this.db.run(`UPDATE users SET lastEntryNumber = ?
           WHERE workspaceId = ?;`,
-          [entryNumber, workspaceId],
-          async (err) => {
-        if (err) {
-          console.error(err.message);
-          reject('Failed update users table.');
-        };
-        resolve();
-      });
+        [entryNumber, workspaceId],
+        async (err) => {
+          if (err) {
+            console.error(err.message);
+            reject('Failed update users table.');
+          };
+          resolve();
+        });
     });
   };
 
@@ -153,30 +154,30 @@ class Database {
 
         // Ensure user is in the database, otherwise add it.
         this.db.all(
-            `SELECT * from users
+          `SELECT * from users
             WHERE (EXISTS (SELECT 1 from users WHERE workspaceId == ?));`,
-            [workspaceId],
-            (err, entries) => {
-          if (err) {
-            console.error(err.message);
-            reject('Failed to get last entry number.');
-          } else if (entries.length == 0) {
-            this.db.run(`INSERT INTO users(workspaceId, lastEntryNumber)
+          [workspaceId],
+          (err, entries) => {
+            if (err) {
+              console.error(err.message);
+              reject('Failed to get last entry number.');
+            } else if (entries.length == 0) {
+              this.db.run(`INSERT INTO users(workspaceId, lastEntryNumber)
                 VALUES(?, -1)`, [workspaceId]);
-          };
-        });
+            };
+          });
 
         this.db.each(
-            `SELECT lastEntryNumber from users WHERE workspaceId = ?;`,
-            [workspaceId],
-            (err, result) => {
-          if (err) {
-            console.error(err.message);
-            reject('Failed to get last entry number.');
-          } else {
-            resolve(result.lastEntryNumber);
-          };
-        });
+          `SELECT lastEntryNumber from users WHERE workspaceId = ?;`,
+          [workspaceId],
+          (err, result) => {
+            if (err) {
+              console.error(err.message);
+              reject('Failed to get last entry number.');
+            } else {
+              resolve(result.lastEntryNumber);
+            };
+          });
       });
     });
   };
@@ -191,11 +192,11 @@ class Database {
   getPositionUpdates(workspaceId) {
     return new Promise((resolve, reject) => {
       const sql = workspaceId ?
-          `SELECT workspaceId, position from users
+        `SELECT workspaceId, position from users
           WHERE
           (EXISTS (SELECT 1 from users WHERE workspaceId == ${workspaceId}))
           AND workspaceId = ${workspaceId};` :
-          `SELECT workspaceId, position from users;`;
+        `SELECT workspaceId, position from users;`;
       this.db.all(sql, (err, positionUpdates) => {
         if (err) {
           console.error(err.message);
@@ -220,22 +221,22 @@ class Database {
   updatePosition(positionUpdate) {
     return new Promise((resolve, reject) => {
       this.db.run(
-          `INSERT INTO users(workspaceId, lastEntryNumber, position)
+        `INSERT INTO users(workspaceId, lastEntryNumber, position)
           VALUES(?, -1, ?)
           ON CONFLICT(workspaceId)
           DO UPDATE SET position = ?`,
-          [
-            positionUpdate.workspaceId,
-            JSON.stringify(positionUpdate.position),
-            JSON.stringify(positionUpdate.position)
-          ],
-          (err) => {
-        if (err) {
-          console.error(err.message);
-          reject();
-        };
-        resolve();
-      });
+        [
+          positionUpdate.workspaceId,
+          JSON.stringify(positionUpdate.position),
+          JSON.stringify(positionUpdate.position)
+        ],
+        (err) => {
+          if (err) {
+            console.error(err.message);
+            reject();
+          };
+          resolve();
+        });
     });
   };
 
@@ -249,14 +250,14 @@ class Database {
   deleteUser(workspaceId) {
     return new Promise((resolve, reject) => {
       this.db.run(
-          `DELETE FROM users WHERE workspaceId = '${workspaceId}';`,
-          (err) => {
-        if (err) {
-          console.error(err.message);
-          reject();
-        };
-        resolve();
-      });
+        `DELETE FROM users WHERE workspaceId = '${workspaceId}';`,
+        (err) => {
+          if (err) {
+            console.error(err.message);
+            reject();
+          };
+          resolve();
+        });
     });
   };
 

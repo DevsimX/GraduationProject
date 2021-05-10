@@ -28,33 +28,28 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
   }
   ;
   console.log('successful connection');
-  // const eventsDbSql = `CREATE TABLE IF NOT EXISTS eventsdb(
-  //     serverId INTEGER PRIMARY KEY,
-  //     workspaceId TEXT, entryNumber INTEGER, events BLOB);`;
-  // db.run(eventsDbSql, function(err) {
-  //   if (err) {
-  //     return console.error(err.message);
-  //   };
-  // });
-  // const userTableSql = `CREATE TABLE IF NOT EXISTS users(
-  //     workspaceId TEXT UNIQUE,
-  //     lastEntryNumber INTEGER,
-  //     position TEXT);`
-  // db.run(userTableSql, function(err) {
-  //   if (err) {
-  //     return console.error(err.message);
-  //   };
-  // });
-
-  const onlineUsersTableSql = `CREATE TABLE IF NOT EXISTS onlineUsers(
-    socketId TEXT UNIQUE,
-    name TEXT
-    );`;
-  db.run(onlineUsersTableSql, function(err) {
+  const eventsDbSql = `CREATE TABLE IF NOT EXISTS events(
+      serverId INTEGER PRIMARY KEY,
+      workspaceId TEXT,
+      entryNumber INTEGER,
+      events BLOB,
+      roomId INTEGER
+      );`;
+  db.run(eventsDbSql, function(err) {
     if (err) {
       return console.error(err.message);
-    }
-    ;
+    };
+  });
+  const workspaceTableSql = `CREATE TABLE IF NOT EXISTS workspaces(
+      workspaceId TEXT UNIQUE,
+      lastEntryNumber INTEGER,
+      position TEXT,
+      roomId INTEGER,
+      );`
+  db.run(workspaceTableSql, function(err) {
+    if (err) {
+      return console.error(err.message);
+    };
   });
 });
 
