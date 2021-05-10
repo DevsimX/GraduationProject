@@ -9,6 +9,7 @@ import {WebrtcUtilService} from "../../../services/webrtcServices/webrtc-util.se
 import {catchError} from "rxjs/operators";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {Subject, throwError} from "rxjs";
+import {io, Socket} from "socket.io-client";
 
 @Component({
   selector: 'app-blockly-webrtc',
@@ -38,6 +39,10 @@ export class BlocklyWebrtcComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.webrtcUtilService.socket = io("wss://www.xytcloud.ltd:4433", {
+      path: "/blockly",
+    })
+
     this.connectionError.subscribe({
       next: (err) => this.notification.error('服务器连接错误',err)
     })
@@ -103,21 +108,21 @@ export class BlocklyWebrtcComponent implements OnInit {
   }
 
   testServerConnection(){
-    this.http.get(
-      'https://xytcloud.ltd:8001/testConnect',
-      {
-        observe: 'response',
-        responseType: 'text'
-      }
-    ).pipe(
-      catchError(this.handleError)
-    ).subscribe(res => {
-      if (res.status == 200 && res.ok){
-        this.testUsernameDuplicated();
-      }else {
-        this.connectionError.next('something wrong happens with the backend')
-      }
-    });
+    // this.http.get(
+    //   'https://xytcloud.ltd:8001/testConnect',
+    //   {
+    //     observe: 'response',
+    //     responseType: 'text'
+    //   }
+    // ).pipe(
+    //   catchError(this.handleError)
+    // ).subscribe(res => {
+    //   if (res.status == 200 && res.ok){
+    //     this.testUsernameDuplicated();
+    //   }else {
+    //     this.connectionError.next('something wrong happens with the backend')
+    //   }
+    // });
   }
 
   testUsernameDuplicated(){

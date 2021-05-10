@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import {ConstantService} from "../constant.service";
 import {Neighbour} from "./neighbours.service";
+import {Socket} from "socket.io-client";
 
 interface chatHistoryType {
   name?: string;
@@ -16,7 +17,8 @@ export class WebrtcUtilService {
   server info
    */
   private _path: string = this.constant.webrtc_path;
-  private _socket: WebSocket = undefined;
+  private _webSocket: WebSocket = undefined;
+  private _socket:Socket = undefined;
 
   /*
   client info
@@ -75,12 +77,12 @@ export class WebrtcUtilService {
     this._path = value;
   }
 
-  get socket(): WebSocket {
-    return this._socket;
+  get webSocket(): WebSocket {
+    return this._webSocket;
   }
 
-  set socket(value: WebSocket) {
-    this._socket = value;
+  set webSocket(value: WebSocket) {
+    this._webSocket = value;
   }
 
   get room_id(): number {
@@ -177,6 +179,14 @@ export class WebrtcUtilService {
 
   set neighbours(value: Neighbour[]) {
     this._neighbours = value;
+  }
+
+  get socket(): Socket {
+    return this._socket;
+  }
+
+  set socket(value: Socket) {
+    this._socket = value;
   }
 
   closeDataChannel(channel: RTCDataChannel): boolean {

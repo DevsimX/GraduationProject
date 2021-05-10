@@ -118,7 +118,7 @@ export class PeerConnectionService {
       //如果peer connection要和其他的peer connection通信就会触发这个函数
       if (evt.candidate) {
         // Send the candidate to the remote peer
-        that.webrtcUtilService.socket.send(JSON.stringify({
+        that.webrtcUtilService.webSocket.send(JSON.stringify({
           "eventName": "__ice_candidate",
           "data": {
             "id": evt.candidate.sdpMid,
@@ -199,7 +199,7 @@ export class PeerConnectionService {
           return peerConnection.setLocalDescription(offer);
         })
           .then(function () {
-            that.webrtcUtilService.socket.send(JSON.stringify({
+            that.webrtcUtilService.webSocket.send(JSON.stringify({
               "eventName": "__offer",
               "data": {
                 "sdp": peerConnection.localDescription,
@@ -246,7 +246,7 @@ export class PeerConnectionService {
           return peerConnection.setLocalDescription(answer);
         })
         .then(function () {
-          that.webrtcUtilService.socket.send(JSON.stringify({
+          that.webrtcUtilService.webSocket.send(JSON.stringify({
             "eventName": "__answer",
             "data": {
               "socketId": socketId,

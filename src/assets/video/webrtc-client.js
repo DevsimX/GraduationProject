@@ -133,7 +133,7 @@ export var SkyRTC = function () {
     //接收文件时用于暂存接收文件
     this.fileData = {};
     //本地WebSocket连接
-    this.socket = null;
+    this.webSocket = null;
     //本地socket的id，由后台服务器创建
     this.mySocketId = null;
     //用户名，用来唯一标识client

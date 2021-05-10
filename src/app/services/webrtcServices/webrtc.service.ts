@@ -47,7 +47,7 @@ export class WebrtcService {
     let that = this;
 
     try {
-      let socket = this.webrtcUtilService.socket = new WebSocket(this.webrtcUtilService.path);
+      let socket = this.webrtcUtilService.webSocket = new WebSocket(this.webrtcUtilService.path);
       /*
       socket 监听事件部分
        */
@@ -167,7 +167,7 @@ export class WebrtcService {
   }
 
   handle_repeatedNameEvent(data) {
-    this.webrtcUtilService.socket.close(1000, "因为用户名重复，因此关闭socket");
+    this.webrtcUtilService.webSocket.close(1000, "因为用户名重复，因此关闭socket");
 
     // @ts-ignore
     this.notifySubject.next({type:'error',title:'连接到服务器失败',content:'你已经在服务器中，请勿重复连接'})
@@ -327,9 +327,9 @@ export class WebrtcService {
    */
   clear() {
     //clear all the parts of service
-    if (this.webrtcUtilService.socket && (this.webrtcUtilService.socket.readyState == 0 || this.webrtcUtilService.socket.readyState == 1))
-      this.webrtcUtilService.socket.close(1000, "用户自主关闭了socket");
-    this.webrtcUtilService.socket = undefined;
+    if (this.webrtcUtilService.webSocket && (this.webrtcUtilService.webSocket.readyState == 0 || this.webrtcUtilService.webSocket.readyState == 1))
+      this.webrtcUtilService.webSocket.close(1000, "用户自主关闭了socket");
+    this.webrtcUtilService.webSocket = undefined;
     this.webrtcUtilService.room_id = undefined;
     this.webrtcUtilService.username = undefined;
     this.webrtcUtilService.name = undefined;
