@@ -3,7 +3,7 @@ const socket = require('socket.io');
 const https = require('https');
 
 const EventsHandlers = require('./public/dist/js/events_handlers');
-const UsersHandlers = require('./public/dist/js/workspace_handlers');
+const WorkSpaceHandlers = require('./public/dist/js/workspace_handlers');
 
 const WS_PORT = 4433;
 
@@ -54,6 +54,7 @@ function deleteRoomFromList(roomId) {
   for(let i = 0 ; i < roomList.length; i++){
     if(roomList[i].id === roomId){
       roomList.splice(i,1);
+      EventsHandlers.deleteFromSnapShotMap(roomId).then(r => {});
       console.log('因为房间人数不足，房间'+roomId+'被删除')
     }
   }
@@ -64,7 +65,7 @@ function deleteClientFromRoom(socketId,username,room) {
     if(room.client_list[i].id === socketId){
       room.client_list.splice(i,1);
       console.log(username+'离开了房间'+room.id)
-      return;
+      break;
     }
   }
   if(room.client_list.length === 0)
@@ -80,11 +81,61 @@ function getWebRtcClientBySocketId(socketId,room_id) {
   return null;
 }
 
+function getAllNeighboursInfo(room_id,socket_id) {
+  let list = {}
+  for(let i of getRoomByRoomId(room_id).client_list){
+    if(i.id === socket_id){
+      continue;
+    }
+    list[i.id] = {
+      name: i.name,
+      username: i.username
+    }
+  }
+  return list;
+}
+
+function userDisconnect(socketId,room_id) {
+  let room = getRoomByRoomId(room_id);
+  let client = getWebRtcClientBySocketId(socketId,room_id)
+  deleteClientFromRoom(socketId,client.username,room)
+
+  io.to(room_id).emit('remove_peer',JSON.stringify({
+    "data": {
+      "socketId": socketId,
+      "name": client.name
+    }
+  }))
+}
+
+function getRoomId(socket) {
+  let rooms = socket.rooms;
+
+  if(rooms.size === 2){
+    const iterator = rooms.values();
+    iterator.next();
+    return iterator.next().value
+  }
+  return null;
+}
+
+function getRoomIdBySocketId(socketId) {
+  console.log(roomList)
+  for(let i of roomList){
+    for(let j of i.client_list){
+      if(j.id === socketId)
+        return i.id;
+    }
+  }
+  return null;
+}
+
+
 
 io.on('connection', (user) => {
-  let all = io.allSockets();
-  console.log(all)
-  console.log('房间中现在有'+all.size+'位用户')
+  const ids = io.of('/').sockets.size;
+  console.log(io.sockets)
+  console.log('房间中现在有'+ids+'位用户')
   onConnect_(user)
 });
 
@@ -118,17 +169,6 @@ async function onConnect_(user) {
     user.to(room_id).emit("new_peer",data);
 
     callback(getAllNeighboursInfo(room_id,user.id));
-  });
-
-  // user.on('connectUser', async (workspaceId, callback) => {
-  //   await UsersHandlers.connectUserHandler(user, workspaceId, callback);
-  // });
-
-  user.on('disconnect', async () => {
-    userDisconnect(user.id,user);
-    // await UsersHandlers.disconnectUserHandler(user.workspaceId, () => {
-    //   io.emit('disconnectUser', user.workspaceId);
-    // });
   });
 
   user.on('_ice_candidate',async (data) => {
@@ -173,66 +213,44 @@ async function onConnect_(user) {
     }
   })
 
+  user.on('connectUser', async (workspaceId, callback) => {
+    let roomId = getRoomId(user);
+    await WorkSpaceHandlers.connectUserHandler(user, workspaceId,roomId, callback);
+  });
+
+  user.on('disconnect', async () => {
+    let roomId = getRoomIdBySocketId(user.id);
+    await WorkSpaceHandlers.disconnectUserHandler(user.workspaceId, () => {
+      io.to(roomId).emit('disconnectUser', user.workspaceId);
+    });
+    userDisconnect(user.id,roomId);
+  });
+
   user.on('addEvents', async (entry, callback) => {
-    await EventsHandlers.addEventsHandler(entry, (serverId) => {
+    let roomId = getRoomId(user);
+    await EventsHandlers.addEventsHandler(entry,roomId, (serverId) => {
       entry.serverId = serverId;
-      io.emit('broadcastEvents', [entry]);
+      io.to(roomId).emit('broadcastEvents', [entry]);
       callback(serverId);
     });
   });
 
   user.on('getEvents', async (serverId, callback) => {
-    await EventsHandlers.getEventsHandler(serverId, callback);
+    let roomId = getRoomId(user);
+    await EventsHandlers.getEventsHandler(serverId,roomId, callback);
   });
 
   user.on('sendPositionUpdate', async (positionUpdate, callback) => {
-    await UsersHandlers.updatePositionHandler(user, positionUpdate, callback);
+    let roomId = getRoomId(user);
+    await WorkSpaceHandlers.updatePositionHandler(user, positionUpdate,roomId, callback);
   });
 
   user.on('getPositionUpdates', async (workspaceId, callback) => {
-    await UsersHandlers.getPositionUpdatesHandler(workspaceId, callback);
+    await WorkSpaceHandlers.getPositionUpdatesHandler(workspaceId, callback);
   });
 
   user.on('getSnapshot', async (callback) => {
-    await EventsHandlers.getSnapshotHandler(callback);
+    let roomId = getRoomId(user);
+    await EventsHandlers.getSnapshotHandler(roomId,callback);
   });
-}
-
-function getAllNeighboursInfo(room_id,socket_id) {
-  let list = {}
-  for(let i of getRoomByRoomId(room_id).client_list){
-    if(i.id === socket_id){
-      continue;
-    }
-    list[i.id] = {
-      name: i.name,
-      username: i.username
-    }
-  }
-  return list;
-}
-
-function userDisconnect(socketId,socket) {
-  let room_id = getRoomId(socket)
-  let room = getRoomByRoomId(room_id);
-  let client = getWebRtcClientBySocketId(socketId,room_id)
-  deleteClientFromRoom(socketId,client.username,room)
-
-  io.to(room_id).emit('remove_peer',JSON.stringify({
-    "data": {
-      "socketId": socketId,
-      "name": client.name
-    }
-  }))
-}
-
-function getRoomId(socket) {
-  let rooms = socket.rooms;
-
-  if(rooms.size === 2){
-    const iterator = rooms.values();
-    iterator.next();
-    return iterator.next().value
-  }
-  return null;
 }
