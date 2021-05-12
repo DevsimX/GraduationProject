@@ -109,8 +109,8 @@ export class WebrtcService {
   };
 
   sendMessage(message, time, socketId) {
-    let sendData = message.type === "canvas" ? message : {
-      type: "__msg",
+    let sendData = {
+      type: "__chatMessage",
       data: message,
       time: time,
     };

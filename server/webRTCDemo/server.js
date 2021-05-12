@@ -202,7 +202,7 @@ async function onConnect_(user) {
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
-      socket.emit('ice_candidate',JSON.stringify({
+      socket.emit('answer',JSON.stringify({
         "data": {
           "sdp": data.sdp,
           "socketId": user.id,
