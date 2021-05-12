@@ -229,7 +229,7 @@ export class WebrtcService {
   }
 
   closeStream(stream: MediaStream) {
-    if (stream !== null) {
+    if (stream) {
       stream.getTracks().forEach(function (track) {
         track.stop();
       });
