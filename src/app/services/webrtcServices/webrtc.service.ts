@@ -142,6 +142,7 @@ export class WebrtcService {
 
   handle_remove_peerEvent(data) {
     let neighbour = this.neighbourService.getNeighbourBySocketId(data.socketId);
+    //bug
     let name = neighbour.name;
     let username = neighbour.username;
 

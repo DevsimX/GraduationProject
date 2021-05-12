@@ -55,7 +55,6 @@ export class PeerConnectionService {
 
   handle_new_peerEvent(data) {
     let that = this;
-    let newPeerConnection = that.createPeerConnection(data.socketId);
     that.neighbourService.addNeighbour(
       data.socketId,
       data.name,

@@ -120,7 +120,6 @@ function getRoomId(socket) {
 }
 
 function getRoomIdBySocketId(socketId) {
-  console.log(roomList)
   for(let i of roomList){
     for(let j of i.client_list){
       if(j.id === socketId)
@@ -134,7 +133,6 @@ function getRoomIdBySocketId(socketId) {
 
 io.on('connection', (user) => {
   const ids = io.of('/').sockets.size;
-  console.log(io.sockets)
   console.log('房间中现在有'+ids+'位用户')
   onConnect_(user)
 });
@@ -172,6 +170,8 @@ async function onConnect_(user) {
   });
 
   user.on('_ice_candidate',async (data) => {
+    console.log('ice')
+    console.log(data)
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
@@ -188,6 +188,8 @@ async function onConnect_(user) {
   })
 
   user.on('_offer',async (data) => {
+    console.log('offer')
+    console.log(data)
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
@@ -201,6 +203,8 @@ async function onConnect_(user) {
   })
 
   user.on('_answer',async (data) => {
+    console.log('answer')
+    console.log(data)
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
