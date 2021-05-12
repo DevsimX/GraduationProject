@@ -76,28 +76,25 @@ export class WebrtcService {
         that.handle_new_peerEvent(data);
       })
 
-      socket.onAny((event, ...args) => {
-        //only used when event needs just one param
-        console.log(event)
-        console.log(args)
+      socket.on("ice_candidate",(res)=>{
+        let data = JSON.parse(res).data;
+        that.handle_ice_candidateEvent(data);
+      })
 
-        let res = JSON.parse(args[0]);
-        let data = res.data;
+      socket.on("offer",(res)=>{
+        let data = JSON.parse(res).data;
+        that.handle_offerEvent(data);
+      })
 
-        switch (event) {
-          case 'ice_candidate':
-            that.handle_ice_candidateEvent(data);
-            break;
-          case 'offer':
-            that.handle_offerEvent(data)
-            break;
-          case 'answer':
-            that.handle_answerEvent(data)
-            break;
-          case 'remove_peer':
-            that.handle_remove_peerEvent(data);
-        }
-      });
+      socket.on("answer",(res)=>{
+        let data = JSON.parse(res).data;
+        that.handle_answerEvent(data);
+      })
+
+      socket.on("remove_peer",(res)=>{
+        let data = JSON.parse(res).data;
+        that.handle_remove_peerEvent(data);
+      })
       return null;
     } catch (e) {
       console.log(e)
