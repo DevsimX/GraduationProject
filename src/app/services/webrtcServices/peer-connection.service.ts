@@ -25,10 +25,10 @@ export class PeerConnectionService {
    */
   handle_peersEvent(data) {
     let that = this;
-    for (let i in data.clientsInfo) {
+    for (let i in data) {
       that.neighbourService.addNeighbour(i,
-        data.clientsInfo[i]['name'],
-        data.clientsInfo[i]['username'],
+        data[i]['name'],
+        data[i]['username'],
         undefined,
         undefined,
         [],
@@ -57,8 +57,8 @@ export class PeerConnectionService {
     let that = this;
     that.neighbourService.addNeighbour(
       data.socketId,
-      data.name,
       data.username,
+      data.name,
       that.createPeerConnection(data.socketId),
       undefined,
       [],
@@ -113,6 +113,7 @@ export class PeerConnectionService {
     peer connection event part
      */
     peerConnection.onicecandidate = function (evt) {
+      console.log(evt)
       //如果peer connection要和其他的peer connection通信就会触发这个函数
       // Send the candidate to the remote peer
       if (evt.candidate) {
