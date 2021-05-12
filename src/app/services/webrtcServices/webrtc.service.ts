@@ -65,9 +65,9 @@ export class WebrtcService {
       })
 
       socket.on("disconnect", (reason) => {
-        if (reason === "io server disconnect") {
+        if (reason === "io server disconnect" || reason === 'io client disconnect') {
           // the disconnection was initiated by the server, you need to reconnect manually
-          socket.connect();
+          that.clear()
         }
         // else the socket will automatically try to reconnect
       });
@@ -94,62 +94,10 @@ export class WebrtcService {
           case 'answer':
             that.handle_answerEvent(data)
             break;
+          case 'remove_peer':
+            that.handle_remove_peerEvent(data);
         }
       });
-
-
-      // socket.onopen = function (event) {
-      //   socket.send(JSON.stringify({
-      //     "eventName": "__join",
-      //     "data": {
-      //       "room_id": room_id,
-      //       "username": username,
-      //       "name": name,
-      //     }
-      //   }))
-      // }
-      //
-      // socket.onclose = function (event) {
-      //   that.clear();
-      // }
-      //
-      // socket.onerror = function (event) {
-      //   that.messageSubject.next({type: 'error', content: 'socket出现了意外的错误'});
-      // }
-      //
-      // socket.onmessage = function (event) {
-      //   let res = JSON.parse(event.data);
-      //   let eventName = res.eventName;
-      //   let data = res.data;
-      //
-      //   //对服务器发过来的数据进行分类处理
-      //   switch (eventName) {
-      //     case "_peers":
-      //       that.handle_peersEvent(data);
-      //       break;
-      //     case "_ice_candidate":
-      //       that.handle_ice_candidateEvent(data);
-      //       break;
-      //     case "_new_peer":
-      //       that.handle_new_peerEvent(data);
-      //       break;
-      //     case "_remove_peer":
-      //       that.handle_remove_peerEvent(data);
-      //       break;
-      //     case "_offer":
-      //       that.handle_offerEvent(data);
-      //       break;
-      //     case "_answer":
-      //       that.handle_answerEvent(data);
-      //       break;
-      //     case "_repeatedName":
-      //       that.handle_repeatedNameEvent(data);
-      //       break;
-      //     default:
-      //     // @ts-ignore
-      //     //TODO
-      //   }
-      // }
       return null;
     } catch (e) {
       console.log(e)
@@ -210,13 +158,6 @@ export class WebrtcService {
 
   handle_answerEvent(data) {
     this.peerConnectionService.handle_answerEvent(data);
-  }
-
-  handle_repeatedNameEvent(data) {
-    // this.webrtcUtilService.webSocket.close(1000, "因为用户名重复，因此关闭socket");
-
-    // @ts-ignore
-    this.notifySubject.next({type: 'error', title: '连接到服务器失败', content: '你已经在服务器中，请勿重复连接'})
   }
 
   /*
@@ -369,16 +310,15 @@ export class WebrtcService {
   }
 
   /*
-
    */
   clear() {
     //clear all the parts of service
-    //TODO
-    // if (this.webrtcUtilService.webSocket && (this.webrtcUtilService.webSocket.readyState == 0 || this.webrtcUtilService.webSocket.readyState == 1))
-    //   this.webrtcUtilService.webSocket.close(1000, "用户自主关闭了socket");
-    // this.webrtcUtilService.webSocket = undefined;
+    if(this.webrtcUtilService.socket && this.webrtcUtilService.socket.connected){
+      this.webrtcUtilService.socket.disconnect();
+    }
     this.webrtcUtilService.room_id = undefined;
     this.webrtcUtilService.username = undefined;
+    this.webrtcUtilService.socket = undefined;
     this.webrtcUtilService.name = undefined;
     this.webrtcUtilService.mediaUsable = false;
     this.closeStream(this.webrtcUtilService.localMediaStream);

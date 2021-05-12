@@ -32,7 +32,7 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
       workspaceId TEXT,
       entryNumber INTEGER,
       events BLOB,
-      roomId INTEGER
+      roomId TEXT
       );`;
   db.run(eventsTableSql, function(err) {
     if (err) {
@@ -43,7 +43,7 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
       workspaceId TEXT UNIQUE,
       lastEntryNumber INTEGER,
       position TEXT,
-      roomId INTEGER,
+      roomId TEXT
       );`
   db.run(workspaceTableSql, function(err) {
     if (err) {

@@ -2,8 +2,8 @@ const fs = require('fs');
 const socket = require('socket.io');
 const https = require('https');
 
-// const EventsHandlers = require('./public/dist/js/events_handlers');
-// const UsersHandlers = require('./public/dist/js/workspace_handlers');
+const EventsHandlers = require('./public/dist/js/events_handlers');
+const UsersHandlers = require('./public/dist/js/workspace_handlers');
 
 const WS_PORT = 4433;
 
@@ -82,6 +82,9 @@ function getWebRtcClientBySocketId(socketId,room_id) {
 
 
 io.on('connection', (user) => {
+  let all = io.allSockets();
+  console.log(all)
+  console.log('房间中现在有'+all.size+'位用户')
   onConnect_(user)
 });
 
@@ -107,7 +110,12 @@ async function onConnect_(user) {
       room.client_list.push(new WebRtcClient(user,username,name));
     }
     //TODO peer and new peer
-    newPeerEvent(room_id,user.id,name,username);
+    let data = {
+      socketId: user.id,
+      name: name,
+      username: username,
+    }
+    user.to(room_id).emit("new_peer",data);
 
     callback(getAllNeighboursInfo(room_id,user.id));
   });
@@ -165,46 +173,29 @@ async function onConnect_(user) {
     }
   })
 
-  // user.on('addEvents', async (entry, callback) => {
-  //   await EventsHandlers.addEventsHandler(entry, (serverId) => {
-  //     entry.serverId = serverId;
-  //     io.emit('broadcastEvents', [entry]);
-  //     callback(serverId);
-  //   });
-  // });
+  user.on('addEvents', async (entry, callback) => {
+    await EventsHandlers.addEventsHandler(entry, (serverId) => {
+      entry.serverId = serverId;
+      io.emit('broadcastEvents', [entry]);
+      callback(serverId);
+    });
+  });
 
-  // user.on('getEvents', async (serverId, callback) => {
-  //   await EventsHandlers.getEventsHandler(serverId, callback);
-  // });
-  //
-  // user.on('sendPositionUpdate', async (positionUpdate, callback) => {
-  //   await UsersHandlers.updatePositionHandler(user, positionUpdate, callback);
-  // });
-  //
-  // user.on('getPositionUpdates', async (workspaceId, callback) => {
-  //   await UsersHandlers.getPositionUpdatesHandler(workspaceId, callback);
-  // });
-  //
-  // user.on('getSnapshot', async (callback) => {
-  //   await EventsHandlers.getSnapshotHandler(callback);
-  // });
-}
+  user.on('getEvents', async (serverId, callback) => {
+    await EventsHandlers.getEventsHandler(serverId, callback);
+  });
 
-function newPeerEvent(room_Id,socketId,name,username) {
-  let room = getRoomByRoomId(room_Id);
-  let client_list = room.client_list;
+  user.on('sendPositionUpdate', async (positionUpdate, callback) => {
+    await UsersHandlers.updatePositionHandler(user, positionUpdate, callback);
+  });
 
-  for(let client of client_list){
-    if(client.id === socketId)
-      continue;
-    let socket = client.socket;
-    let data = {
-      socketId: socketId,
-      name: name,
-      username: username,
-    }
-    socket.emit("new_peer",data);
-  }
+  user.on('getPositionUpdates', async (workspaceId, callback) => {
+    await UsersHandlers.getPositionUpdatesHandler(workspaceId, callback);
+  });
+
+  user.on('getSnapshot', async (callback) => {
+    await EventsHandlers.getSnapshotHandler(callback);
+  });
 }
 
 function getAllNeighboursInfo(room_id,socket_id) {
@@ -227,7 +218,12 @@ function userDisconnect(socketId,socket) {
   let client = getWebRtcClientBySocketId(socketId,room_id)
   deleteClientFromRoom(socketId,client.username,room)
 
-  io
+  io.to(room_id).emit('remove_peer',JSON.stringify({
+    "data": {
+      "socketId": socketId,
+      "name": client.name
+    }
+  }))
 }
 
 function getRoomId(socket) {

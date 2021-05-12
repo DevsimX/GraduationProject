@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Neighbour, NeighboursService} from "./neighbours.service";
 import {ConstantService} from "../constant.service";
-import {WebrtcService} from "./webrtc.service";
 import {LoggerService} from "./logger.service";
 import {DataChannelService} from "./data-channel.service";
 import {WebrtcUtilService} from "./webrtc-util.service";
@@ -119,16 +118,14 @@ export class PeerConnectionService {
       // Send the candidate to the remote peer
       if (evt.candidate) {
         that.webrtcUtilService.socket.emit('_ice_candidate',
-          JSON.stringify({
-            "eventName": "__ice_candidate",
-            "data": {
+            {
               "id": evt.candidate.sdpMid,
               "label": evt.candidate.sdpMLineIndex,
               "sdpMLineIndex": evt.candidate.sdpMLineIndex,
               "candidate": evt.candidate.candidate,
               "socketId": socketId,
             }
-          }))
+          )
       } else {
         // All ICE candidates have been sent
       }
@@ -201,13 +198,11 @@ export class PeerConnectionService {
         })
           .then(function () {
             that.webrtcUtilService.socket.emit('_offer',
-              JSON.stringify({
-                "eventName": "__offer",
-                "data": {
+              {
                   "sdp": peerConnection.localDescription,
                   "socketId": socketId,
                 }
-              }))
+              )
           })
       } catch (err) {
         that.logger.log("*** The following error occurred while handling the negotiationneeded event:");
@@ -248,13 +243,10 @@ export class PeerConnectionService {
           return peerConnection.setLocalDescription(answer);
         })
         .then(function () {
-          // that.webrtcUtilService.webSocket.send(JSON.stringify({
-          //   "eventName": "__answer",
-          //   "data": {
-          //     "socketId": socketId,
-          //     "sdp": peerConnection.localDescription,
-          //   }
-          // }));
+          that.webrtcUtilService.socket.emit('_answer',{
+              "socketId": socketId,
+              "sdp": peerConnection.localDescription,
+            });
         })
     } catch (err) {
       that.logger.log("*** The following error occurred while handling the sendAnswer event:");

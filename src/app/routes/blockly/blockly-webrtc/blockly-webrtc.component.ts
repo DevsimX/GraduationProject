@@ -304,5 +304,4 @@ export class BlocklyWebrtcComponent implements OnInit {
     }
     return i;
   }
-
 }
