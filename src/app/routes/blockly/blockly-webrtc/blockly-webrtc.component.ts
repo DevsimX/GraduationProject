@@ -39,10 +39,6 @@ export class BlocklyWebrtcComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // this.webrtcUtilService.socket = io("wss://www.xytcloud.ltd:4433", {
-    //   path: "/blockly",
-    // })
-
     this.connectionError.subscribe({
       next: (err) => this.notification.error('服务器连接错误',err)
     })
@@ -84,68 +80,23 @@ export class BlocklyWebrtcComponent implements OnInit {
     })
   }
 
-  connectToServer(): void {
-    if (this.checkRoomIDLegality(this.input_room_id_string)) {
-      let room_id_int = parseInt(this.input_room_id_string);
-      let username = this.tokenService.get().username;
-      let name = this.tokenService.get().name;
-
-      let res = this.webrtcService.connect(room_id_int, username, name);
-
-      if (res) {
-        this.notification.error(
-          '连接服务器失败',
-          res,
-        )
-      } else {
-        //TODO
-      }
-    }
-  }
-
   disconnectFromServer() {
     this.webrtcService.clear();
   }
 
-  testServerConnection(){
-    this.http.get(
-      'https://xytcloud.ltd:8001/testConnect',
-      {
-        observe: 'response',
-        responseType: 'text'
-      }
-    ).pipe(
-      catchError(this.handleError)
-    ).subscribe(res => {
-      if (res.status == 200 && res.ok){
-        this.testUsernameDuplicated();
-      }else {
-        this.connectionError.next('something wrong happens with the backend')
-      }
-    });
-  }
-
-  testUsernameDuplicated(){
+  connect(){
+    if(this.input_room_id_string === ''){
+      this.message.error('输入的房间号不能为空')
+      return;
+    }
+    if(this.webrtcUtilService.socket && this.webrtcUtilService.socket.connected){
+      this.message.error('你已经在房间当中，请退出房间后重新进入')
+      return;
+    }
+    let room = this.input_room_id_string;
     let username = this.tokenService.get().username;
-    this.http.get(
-      'https://xytcloud.ltd:8001/testUsernameDuplicated',
-      {
-        observe: 'response',
-        responseType: 'text',
-        params: {'username':username}
-      }
-    ).pipe(
-      catchError(this.handleError)
-    ).subscribe(res => {
-      let responseText = res.statusText;
-      if(responseText === 'ok'){
-        this.connectToServer();
-      }else if(responseText === 'username duplicated'){
-        this.connectionError.next('你已经在服务器中，请勿重复连接。')
-      }else {
-        this.connectionError.next(responseText);
-      }
-    });
+    let name = this.tokenService.get().name;
+    this.webrtcService.connect(room,username,name);
   }
 
   private handleError(error: HttpErrorResponse) {

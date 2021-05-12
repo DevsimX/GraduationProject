@@ -1,7 +1,6 @@
-import { Component, EventEmitter, Inject, OnInit } from '@angular/core';
+import {Component, Inject, OnInit} from '@angular/core';
 
 import {blockly_options} from 'src/assets/blockly/blockly_options.js';
-import WorkspaceClient from 'src/assets/blockly/WorkspaceClient.js'
 
 import {Crypto} from 'src/assets/crypto/crypto';
 import {SceneType, SceneService} from '../../services/scene.service';
@@ -14,6 +13,10 @@ import {CanvasWhiteboardComponent} from "ng2-canvas-whiteboard";
 import {NzMessageService} from "ng-zorro-antd/message";
 import {NzTabsCanDeactivateFn} from "ng-zorro-antd/tabs";
 import {Observable} from "rxjs";
+import * as EventEmitter from "events";
+import Position from '../../../assets/blockly/Position.js';
+import {WebrtcService} from "../../services/webrtcServices/webrtc.service";
+import {WebrtcUtilService} from "../../services/webrtcServices/webrtc-util.service";
 
 declare var interpreter: any;
 declare var Blockly: any;
@@ -51,6 +54,23 @@ interface MyObjectType {
   hide?: Boolean
 }
 
+interface WorkspaceParams {
+  listener: EventEmitter,
+  workspaceId: string,
+  lastSync: number,
+  inProgress: any[],
+  notSent: any[],
+  activeChanges: any[],
+  writeInProgress: boolean,
+  counter: number,
+  serverEvents: any[],
+  updateInProgress: boolean,
+}
+
+interface UserDataParams {
+  colours: any[],
+}
+
 @Component({
   selector: 'app-blockly',
   templateUrl: './blockly.component.html',
@@ -82,7 +102,24 @@ export class BlocklyComponent implements OnInit {
   drawerVisible = false;
 
   // workspace params
+  workspaceParams: WorkspaceParams = {
+    workspaceId: undefined,
+    lastSync: 0,
+    inProgress: [],
+    notSent: [],
+    activeChanges: [],
+    writeInProgress: false,
+    counter: 0,
+    serverEvents: [],
+    updateInProgress: false,
+    listener: new EventEmitter(),
+  }
 
+  // user data params
+  userDataParams: UserDataParams = {
+    colours: [
+      '#fcba03', '#03fc20', '#03f0fc', '#035efc', '#5603fc', '#fc03d2'],
+  }
 
   // 创建场景
   movePictures: any[][] = []; // 可移动角色图片集
@@ -119,18 +156,40 @@ export class BlocklyComponent implements OnInit {
     private message: NzMessageService,
     private notification: NzNotificationService,
     private modal: NzModalService,
+    private webrtcService: WebrtcService,
+    private webrtcUtilService: WebrtcUtilService,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
   ) {
   }
 
 
   ngAfterViewInit(): void {
+    this.initBlockly();
     this.initCanvas();
   }
 
   ngOnInit(): void {
     let crypto: cryptoType = new Crypto();
     let that = this;
+
+    this.webrtcService.connectedSubject.subscribe(async function (v) {
+      await that.syncWithServer();
+      await that.workspaceSentToServer();
+      that.workspace.addChangeListener((event) => {
+        if (event.type === Blockly.Events.SELECTED ||
+          (event.type === Blockly.Events.CHANGE && event.element === 'field')) {
+          that.handleEvent(event);
+        }
+        if (event.isUiEvent) {
+          return;
+        }
+        that.workspaceParams.activeChanges.push(event);
+        if (!Blockly.Events.getGroup()) {
+          that.flushEvents();
+        }
+      });
+    })
+
     // this.initCanvas();
     // 先获得场景编号，然后根据当前的模式判断应该执行的内容
     this.route.params.subscribe(function (data) {
@@ -267,12 +326,6 @@ export class BlocklyComponent implements OnInit {
   }
 
   initCanvas() {
-    //blockly
-    const blocklyDiv = document.getElementById('blocklyDiv');
-    this.workspace = Blockly.inject(blocklyDiv, blockly_options);
-    this.workspace.addChangeListener(this.test)
-    this.workspace.removeChangeListener(this.test1)
-
     //canvas
     let cnv = window.document.getElementById('cnvMain') as HTMLCanvasElement;
     this.cWidth = cnv.width;
@@ -288,12 +341,10 @@ export class BlocklyComponent implements OnInit {
     };
   }
 
-  test(event) {
-    console.log(event)
-  }
-
-  test1(event) {
-    console.log(event)
+  initBlockly() {
+    //blockly
+    const blocklyDiv = document.getElementById('blocklyDiv');
+    this.workspace = Blockly.inject(blocklyDiv, blockly_options);
   }
 
   addObjectsToCanvas(objects) {
@@ -819,6 +870,386 @@ export class BlocklyComponent implements OnInit {
    */
 
 
+  async syncWithServer() {
+    this.workspaceParams.workspaceId = this.workspace.id;
+    this.workspaceParams.listener.on('runEvents', (eventQueue) => {
+      this.runEvents(eventQueue);
+    });
+
+    const snapshot = await this.getSnapShot();
+    // @ts-ignore
+    Blockly.Xml.domToWorkspace(snapshot.xml, this.workspace);
+
+    // @ts-ignore
+    this.workspaceParams.lastSync = snapshot.serverId;
+
+    // Run any events that may have happened while loading the workspace.
+    const events = await this.getEvents(this.workspaceParams.lastSync)
+    await this.addServerEvents(events);
+
+    if (this.getBroadcast) {
+      this.getBroadcast(this.addServerEvents.bind(this))
+    } else {
+      await this.pollServer();
+    }
+  }
+
+  flushEvents() {
+    this.workspaceParams.notSent = this.workspaceParams.notSent.concat(this.workspaceParams.activeChanges);
+    this.workspaceParams.activeChanges = [];
+    this.updateServer().then(r => {});
+  };
+
+  async updateServer() {
+    if (this.workspaceParams.writeInProgress || this.workspaceParams.notSent.length == 0) {
+      return;
+    }
+    this.workspaceParams.writeInProgress = true;
+    while (this.workspaceParams.notSent.length > 0) {
+      await this.writeToDatabase_();
+    }
+    this.workspaceParams.writeInProgress = false;
+  };
+
+  async writeToDatabase_() {
+    this.beginWrite();
+    try {
+      await this.writeEvents(this.workspaceParams.inProgress[this.workspaceParams.inProgress.length - 1]);
+      this.endWrite(true);
+    } catch {
+      this.endWrite(false);
+      throw Error('Failed to write to database.');
+    }
+  };
+
+  beginWrite() {
+    this.workspaceParams.writeInProgress = true;
+    this.workspaceParams.inProgress.push({
+      workspaceId: this.workspaceParams.workspaceId,
+      entryNumber: this.workspaceParams.counter,
+      events: Blockly.Events.filter(this.workspaceParams.notSent, true),
+    });
+    this.workspaceParams.counter += 1;
+    this.workspaceParams.notSent = [];
+  };
+
+  async writeEvents(entry) {
+    const entryJson = {
+      workspaceId: entry.workspaceId,
+      entryNumber: entry.entryNumber,
+      events: entry.events.map((event) => event.toJson())
+    };
+    return new Promise((resolve, reject) => {
+      this.webrtcUtilService.socket.emit('addEvents', entryJson, () => {
+        resolve(null);
+      });
+    });
+  }
+
+  endWrite(success) {
+    if (!success) {
+      this.workspaceParams.notSent = this.workspaceParams.inProgress[0].events.concat(this.workspaceParams.notSent);
+      this.workspaceParams.inProgress = [];
+      this.workspaceParams.counter -= 1;
+    }
+    this.workspaceParams.writeInProgress = false;
+  };
+
+  async getSnapShot() {
+    return new Promise(
+      (resolve, reject) => {
+        this.webrtcUtilService.socket.emit('getSnapshot', (snapshot) => {
+          snapshot.xml = Blockly.Xml.textToDom(snapshot.xml);
+          resolve(snapshot);
+        });
+      }
+    )
+  }
+
+  async getEvents(serverId: number) {
+    return new Promise((resolve, reject) => {
+      this.webrtcUtilService.socket.emit('getEvents', serverId, (entries) => {
+        entries.forEach((entry) => {
+          entry.events = entry.events.map((entry) => {
+            return Blockly.Events.fromJson(entry, Blockly.getMainWorkspace());
+          });
+        });
+        resolve(entries);
+      });
+    });
+  }
+
+  getBroadcast(callback) {
+    this.webrtcUtilService.socket.on('broadcastEvents', (entries) => {
+      entries.forEach((entry) => {
+        entry.events = entry.events.map((entry) => {
+          return Blockly.Events.fromJson(entry, Blockly.getMainWorkspace());
+        });
+      });
+      callback(entries);
+    });
+  }
+
+  runEvents(eventQueue) {
+    eventQueue.forEach((workspaceAction) => {
+      Blockly.Events.disable();
+      workspaceAction.event.run(workspaceAction.forward);
+      Blockly.Events.enable();
+    });
+  };
+
+  async addServerEvents(newServerEvents) {
+    if (newServerEvents.length == 0) {
+      return;
+    }
+    if (newServerEvents[0].serverId != this.workspaceParams.lastSync + 1) {
+      newServerEvents = await this.queryDatabase();
+    }
+    this.workspaceParams.lastSync = newServerEvents[newServerEvents.length - 1].serverId;
+    this.workspaceParams.serverEvents.push.apply(this.workspaceParams.serverEvents, newServerEvents);
+    await this.updateWorkspace();
+  }
+
+  async queryDatabase() {
+    try {
+      return await this.getEvents(this.workspaceParams.lastSync);
+    } catch {
+      return [];
+    }
+  };
+
+  async updateWorkspace() {
+    if (this.workspaceParams.updateInProgress || this.workspaceParams.serverEvents.length == 0) {
+      return;
+    }
+    this.workspaceParams.updateInProgress = true;
+    while (this.workspaceParams.serverEvents.length > 0) {
+      const newServerEvents = this.workspaceParams.serverEvents;
+      this.workspaceParams.serverEvents = [];
+      const eventQueue = await this.processQueryResults(newServerEvents);
+      this.workspaceParams.updateInProgress = false;
+      this.workspaceParams.listener.emit('runEvents', eventQueue);
+    }
+  };
+
+  processQueryResults(entries) {
+    const eventQueue = [];
+
+    if (entries.length == 0) {
+      return eventQueue;
+    }
+
+    this.workspaceParams.lastSync = entries[entries.length - 1].serverId;
+
+    // No local changes.
+    if (this.workspaceParams.notSent.length == 0 && this.workspaceParams.inProgress.length == 0) {
+      entries.forEach((entry) => {
+        eventQueue.push.apply(
+          eventQueue, this.createWorkspaceActions(entry.events, true));
+      });
+      return eventQueue;
+    }
+
+    // Common root, remove common events from server events.
+    if (this.workspaceParams.inProgress.length > 0
+      && entries[0].workspaceId == this.workspaceParams.workspaceId
+      && entries[0].entryNumber == this.workspaceParams.inProgress[0].entryNumber) {
+      entries.shift();
+      this.workspaceParams.inProgress = [];
+    }
+
+    if (entries.length > 0) {
+      // Undo local events.
+      eventQueue.push.apply(
+        eventQueue,
+        this.createWorkspaceActions(this.workspaceParams.notSent.slice().reverse(), false));
+      if (this.workspaceParams.inProgress.length > 0) {
+        this.workspaceParams.inProgress.slice().reverse().forEach((entry) => {
+          eventQueue.push.apply(eventQueue, this.createWorkspaceActions(
+            entry.events.slice().reverse(), false));
+        });
+      }
+      // Apply server events.
+      entries.forEach((entry) => {
+        if (this.workspaceParams.inProgress.length > 0
+          && entry.workspaceId == this.workspaceParams.inProgress[0].workspaceId
+          && entry.entryNumber == this.workspaceParams.inProgress[0].entryNumber) {
+          eventQueue.push.apply(
+            eventQueue,
+            this.createWorkspaceActions(this.workspaceParams.inProgress[0].events, true));
+          this.workspaceParams.inProgress.shift();
+        } else {
+          eventQueue.push.apply(
+            eventQueue, this.createWorkspaceActions(entry.events, true));
+        }
+      });
+      // Reapply remaining local changes.
+      if (this.workspaceParams.inProgress.length > 0) {
+        eventQueue.push.apply(
+          eventQueue,
+          this.createWorkspaceActions(this.workspaceParams.inProgress[0].events, true));
+      }
+      eventQueue.push.apply(
+        eventQueue, this.createWorkspaceActions(this.workspaceParams.notSent, true));
+    }
+    return eventQueue;
+  };
+
+  createWorkspaceActions(events, forward) {
+    const eventQueue = [];
+    events.forEach((event) => {
+      eventQueue.push({
+        event: event,
+        forward: forward
+      });
+    });
+    return eventQueue;
+  };
+
+  async pollServer() {
+    const entries = await this.queryDatabase();
+    await this.addServerEvents(entries);
+    setTimeout(() => {
+      this.pollServer()
+    }, 5000);
+  };
+
+
+  /*
+  user data handle parts
+   */
+
+  async workspaceSentToServer() {
+    await this.connectUser(this.workspaceParams.workspaceId);
+    const positionUpdates = await this.getPositionUpdates(null);
+    // @ts-ignore
+    positionUpdates.forEach((positionUpdate) => {
+      this.createMarker_(positionUpdate);
+    });
+    if (this.getBroadcastPositionUpdates) {
+      await this.getBroadcastPositionUpdates(this.updateMarkerPositions_.bind(this));
+    } else {
+      await this.pollServer_();
+    }
+    if (this.getUserDisconnects) {
+      this.getUserDisconnects(this.disposeMarker_.bind(this));
+    }
+  }
+
+  async handleEvent(event) {
+    const position = Position.fromEvent(event);
+    await this.sendPositionUpdate({
+      workspaceId: this.workspaceParams.workspaceId,
+      position: position
+    });
+  };
+
+  async pollServer_() {
+    const positionUpdates = await this.getPositionUpdates(null);
+    await this.updateMarkerPositions_(positionUpdates);
+    setTimeout(() => {
+      this.pollServer_();
+    }, 5000)
+  };
+
+  getWorkspace_() {
+    return Blockly.Workspace.getById(this.workspaceParams.workspaceId);
+  };
+
+  getMarkerManager_() {
+    return this.getWorkspace_() ?
+      this.getWorkspace_().getMarkerManager() : null;
+  };
+
+  getColour_() {
+    const colour = this.userDataParams.colours.shift();
+    this.userDataParams.colours.push(colour);
+    return colour;
+  };
+
+  createMarker_(positionUpdate) {
+    if (!this.getMarkerManager_()) {
+      throw Error('Cannot create a Marker without Blockly MarkerManager.');
+    }
+    const position = positionUpdate.position;
+    const marker = position.toMarker(this.getWorkspace_());
+    marker.colour = this.getColour_();
+    this.getMarkerManager_().registerMarker(positionUpdate.workspaceId, marker)
+    marker.setCurNode(position.createNode(this.getWorkspace_()));
+    return marker;
+  };
+
+  disposeMarker_(workspaceId) {
+    if (!this.getMarkerManager_()) {
+      throw Error('Cannot dispose of a Marker without Blockly MarkerManager.');
+    }
+    try {
+      this.getMarkerManager_().unregisterMarker(workspaceId);
+    } catch {
+
+    }
+  };
+
+  getMarker(workspaceId) {
+    return this.getMarkerManager_() ?
+      this.getMarkerManager_().getMarker(workspaceId) : null;
+  };
+
+  async updateMarkerPositions_(positionUpdates) {
+    const filteredPositionUpdates = positionUpdates.filter(
+      positionUpdate => positionUpdate.workspaceId != this.workspaceParams.workspaceId);
+    filteredPositionUpdates.forEach((positionUpdate) => {
+      const position = positionUpdate.position;
+      const node = position.createNode(this.getWorkspace_());
+      if (this.getMarker(positionUpdate.workspaceId)) {
+        this.getMarker(positionUpdate.workspaceId).setCurNode(node);
+      } else {
+        this.createMarker_(positionUpdate).setCurNode(node);
+      }
+    });
+  };
+
+  async getPositionUpdates(workspaceId) {
+    return new Promise((resolve, reject) => {
+      this.webrtcUtilService.socket.emit('getPositionUpdates', workspaceId, (positionUpdates) => {
+        positionUpdates.forEach((positionUpdate) => {
+          positionUpdate.position = Position.fromJson(positionUpdate.position);
+        });
+        resolve(positionUpdates);
+      });
+    });
+  }
+
+  async sendPositionUpdate(positionUpdate) {
+    return new Promise((resolve, reject) => {
+      this.webrtcUtilService.socket.emit('sendPositionUpdate', positionUpdate, () => {
+        resolve(null);
+      });
+    });
+  }
+
+  async getBroadcastPositionUpdates(callback) {
+    this.webrtcUtilService.socket.on('broadcastPosition', async (positionUpdates) => {
+      positionUpdates.forEach((positionUpdate) => {
+        positionUpdate.position = Position.fromJson(positionUpdate.position);
+      });
+      await callback(positionUpdates);
+    });
+  }
+
+  async connectUser(workspaceId) {
+    return new Promise((resolve, reject) => {
+      this.webrtcUtilService.socket.emit('connectUser', workspaceId, () => {
+        resolve(null);
+      });
+    });
+  }
+
+  getUserDisconnects(callback) {
+    this.webrtcUtilService.socket.on('disconnectUser', async (workspaceId) => {
+      await callback(workspaceId);
+    });
+  }
 
   canDeactivate: NzTabsCanDeactivateFn = (fromIndex: number, toIndex: number) => {
     switch (fromIndex) {

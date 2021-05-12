@@ -10,11 +10,11 @@
     <div style="margin-top: 20px;" nz-row [nzGutter]="16">
       <div nz-col class="gutter-row" [nzSpan]="16">
         <div id="inputRoom">
-          <input nz-input placeholder="请输入房间号(必须为纯数字)" [(ngModel)]="input_room_id_string"/>
+          <input nz-input placeholder="请输入房间号" [(ngModel)]="input_room_id_string"/>
         </div>
       </div>
       <div nz-col class="gutter-row" [nzSpan]="8">
-        <button style="width: 110px" [disabled]="webrtcUtilService.connected" id="connect" (click)="testServerConnection()"
+        <button style="width: 110px" [disabled]="webrtcUtilService.connected" id="connect" (click)="connect()"
                 nz-button
                 nzType="primary">加入房间
         </button>

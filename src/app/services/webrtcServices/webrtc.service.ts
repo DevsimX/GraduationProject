@@ -8,6 +8,8 @@ import {catchError, retry} from 'rxjs/operators';
 import {LoggerService} from "./logger.service";
 import {WebrtcUtilService} from "./webrtc-util.service";
 import {DataChannelService} from "./data-channel.service";
+import {io} from "socket.io-client";
+import * as Blockly from "blockly";
 
 @Injectable(
   {
@@ -40,69 +42,114 @@ export class WebrtcService {
   @input: room_id
   @output: error message
    */
-  connect(room_id: number, username: string, name: string): string {
+  connect(room_id: string, username: string, name: string): string {
     this.webrtcUtilService.username = username;
     this.webrtcUtilService.name = name;
 
     let that = this;
 
     try {
-      let socket = this.webrtcUtilService.webSocket = new WebSocket(this.webrtcUtilService.path);
+      let socket = this.webrtcUtilService.socket = io("wss://www.xytcloud.ltd:4433", {
+        path: "/blockly",
+        reconnection: false,
+      });
+
       /*
       socket 监听事件部分
        */
-      socket.onopen = function (event) {
-        socket.send(JSON.stringify({
-          "eventName": "__join",
-          "data": {
-            "room_id": room_id,
-            "username": username,
-            "name": name,
-          }
-        }))
-      }
+      socket.on('connect',()=>{
+        socket.emit('joinRoom', room_id, name, username,
+          (neighbours) => {
+            that.handle_peersEvent(neighbours);
+          })
+      })
 
-      socket.onclose = function (event) {
-        that.clear();
-      }
+      socket.on("disconnect", (reason) => {
+        if (reason === "io server disconnect") {
+          // the disconnection was initiated by the server, you need to reconnect manually
+          socket.connect();
+        }
+        // else the socket will automatically try to reconnect
+      });
 
-      socket.onerror = function (event) {
-        that.messageSubject.next({type:'error',content: 'socket出现了意外的错误'});
-      }
+      socket.on("new_peer",(data)=>{
+        that.handle_new_peerEvent(data);
+      })
 
-      socket.onmessage = function (event) {
-        let res = JSON.parse(event.data);
-        let eventName = res.eventName;
+      socket.onAny((event, ...args) => {
+        //only used when event needs just one param
+        console.log(event)
+        console.log(args)
+
+        let res = JSON.parse(args[0]);
         let data = res.data;
 
-        //对服务器发过来的数据进行分类处理
-        switch (eventName) {
-          case "_peers":
-            that.handle_peersEvent(data);
-            break;
-          case "_ice_candidate":
+        switch (event) {
+          case 'ice_candidate':
             that.handle_ice_candidateEvent(data);
             break;
-          case "_new_peer":
-            that.handle_new_peerEvent(data);
+          case 'offer':
+            that.handle_offerEvent(data)
             break;
-          case "_remove_peer":
-            that.handle_remove_peerEvent(data);
+          case 'answer':
+            that.handle_answerEvent(data)
             break;
-          case "_offer":
-            that.handle_offerEvent(data);
-            break;
-          case "_answer":
-            that.handle_answerEvent(data);
-            break;
-          case "_repeatedName":
-            that.handle_repeatedNameEvent(data);
-            break;
-          default:
-          // @ts-ignore
-          //TODO
         }
-      }
+      });
+
+
+      // socket.onopen = function (event) {
+      //   socket.send(JSON.stringify({
+      //     "eventName": "__join",
+      //     "data": {
+      //       "room_id": room_id,
+      //       "username": username,
+      //       "name": name,
+      //     }
+      //   }))
+      // }
+      //
+      // socket.onclose = function (event) {
+      //   that.clear();
+      // }
+      //
+      // socket.onerror = function (event) {
+      //   that.messageSubject.next({type: 'error', content: 'socket出现了意外的错误'});
+      // }
+      //
+      // socket.onmessage = function (event) {
+      //   let res = JSON.parse(event.data);
+      //   let eventName = res.eventName;
+      //   let data = res.data;
+      //
+      //   //对服务器发过来的数据进行分类处理
+      //   switch (eventName) {
+      //     case "_peers":
+      //       that.handle_peersEvent(data);
+      //       break;
+      //     case "_ice_candidate":
+      //       that.handle_ice_candidateEvent(data);
+      //       break;
+      //     case "_new_peer":
+      //       that.handle_new_peerEvent(data);
+      //       break;
+      //     case "_remove_peer":
+      //       that.handle_remove_peerEvent(data);
+      //       break;
+      //     case "_offer":
+      //       that.handle_offerEvent(data);
+      //       break;
+      //     case "_answer":
+      //       that.handle_answerEvent(data);
+      //       break;
+      //     case "_repeatedName":
+      //       that.handle_repeatedNameEvent(data);
+      //       break;
+      //     default:
+      //     // @ts-ignore
+      //     //TODO
+      //   }
+      // }
       return null;
     } catch (e) {
       console.log(e)
@@ -134,7 +181,6 @@ export class WebrtcService {
    */
   handle_peersEvent(data) {
     this.peerConnectionService.handle_peersEvent(data);
-    this.webrtcUtilService.socket_id = data.socketId;
     this.webrtcUtilService.connected = true;
     //this param is unused
     this.connectedSubject.next(0);
@@ -146,7 +192,7 @@ export class WebrtcService {
 
   handle_new_peerEvent(data) {
     this.peerConnectionService.handle_new_peerEvent(data);
-    this.messageSubject.next({type:'success',content: data.name+'进入了房间中',})
+    this.messageSubject.next({type: 'success', content: data.name + '进入了房间中',})
   }
 
   handle_remove_peerEvent(data) {
@@ -155,7 +201,7 @@ export class WebrtcService {
     let username = neighbour.username;
 
     this.peerConnectionService.handle_remove_peerEvent(data, neighbour);
-    this.messageSubject.next({type:'success',content: data.name+'退出了房间',})
+    this.messageSubject.next({type: 'success', content: data.name + '退出了房间',})
   }
 
   handle_offerEvent(data) {
@@ -167,10 +213,10 @@ export class WebrtcService {
   }
 
   handle_repeatedNameEvent(data) {
-    this.webrtcUtilService.webSocket.close(1000, "因为用户名重复，因此关闭socket");
+    // this.webrtcUtilService.webSocket.close(1000, "因为用户名重复，因此关闭socket");
 
     // @ts-ignore
-    this.notifySubject.next({type:'error',title:'连接到服务器失败',content:'你已经在服务器中，请勿重复连接'})
+    this.notifySubject.next({type: 'error', title: '连接到服务器失败', content: '你已经在服务器中，请勿重复连接'})
   }
 
   /*
@@ -194,11 +240,11 @@ export class WebrtcService {
             function (stream) {
               that.webrtcUtilService.localMediaStream = stream;
               that.removeLocalTrackAndAddNewTrackToNeighboursStream();
-              that.messageSubject.next({type:'success',content:'视频流切换成功'})
+              that.messageSubject.next({type: 'success', content: '视频流切换成功'})
             },
             function (error) {
               that.clear();
-              that.notifySubject.next({type:'error',title: '视频流创建出现错误', content: error});
+              that.notifySubject.next({type: 'error', title: '视频流创建出现错误', content: error});
             });
         } else {
           // TODO
@@ -211,11 +257,11 @@ export class WebrtcService {
           .then(function (stream) {
             that.webrtcUtilService.localMediaStream = stream;
             that.removeLocalTrackAndAddNewTrackToNeighboursStream();
-            that.messageSubject.next({type:'success',content:'视频流切换成功'})
+            that.messageSubject.next({type: 'success', content: '视频流切换成功'})
           })
           .catch(function (error) {
             that.clear();
-            that.notifySubject.next({type:'error',title: '视频流创建出现错误', content: error});
+            that.notifySubject.next({type: 'error', title: '视频流创建出现错误', content: error});
           });
         break;
     }
@@ -270,14 +316,14 @@ export class WebrtcService {
           that.changeVideoStreamEnabledState(false);
 
           that.webrtcUtilService.mediaUsable = true;
-          that.notifySubject.next({type:'success',title: '视频流创建成功', content: '视频流已经显示在右下方'});
+          that.notifySubject.next({type: 'success', title: '视频流创建成功', content: '视频流已经显示在右下方'});
 
           that.createDataChannelWithNeighbours();
           that.addLocalTrackToNeighboursStream();
         },
         function (error) {
           that.clear();
-          that.notifySubject.next({type:'error',title: '视频流创建出现错误', content: error});
+          that.notifySubject.next({type: 'error', title: '视频流创建出现错误', content: error});
           console.log(error)
         });
     } else {
@@ -306,7 +352,7 @@ export class WebrtcService {
 
   removeLocalTrackAndAddNewTrackToNeighboursStream() {
     for (let neighbour of this.webrtcUtilService.neighbours) {
-      let peerConnection  = neighbour.peer_connection;
+      let peerConnection = neighbour.peer_connection;
       let senders = peerConnection.getSenders();
       senders.forEach(sender => peerConnection.removeTrack(sender));
       this.webrtcUtilService.localMediaStream.getTracks()
@@ -327,13 +373,13 @@ export class WebrtcService {
    */
   clear() {
     //clear all the parts of service
-    if (this.webrtcUtilService.webSocket && (this.webrtcUtilService.webSocket.readyState == 0 || this.webrtcUtilService.webSocket.readyState == 1))
-      this.webrtcUtilService.webSocket.close(1000, "用户自主关闭了socket");
-    this.webrtcUtilService.webSocket = undefined;
+    //TODO
+    // if (this.webrtcUtilService.webSocket && (this.webrtcUtilService.webSocket.readyState == 0 || this.webrtcUtilService.webSocket.readyState == 1))
+    //   this.webrtcUtilService.webSocket.close(1000, "用户自主关闭了socket");
+    // this.webrtcUtilService.webSocket = undefined;
     this.webrtcUtilService.room_id = undefined;
     this.webrtcUtilService.username = undefined;
     this.webrtcUtilService.name = undefined;
-    this.webrtcUtilService.socket_id = undefined;
     this.webrtcUtilService.mediaUsable = false;
     this.closeStream(this.webrtcUtilService.localMediaStream);
     this.webrtcUtilService.localMediaStream = undefined;

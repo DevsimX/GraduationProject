@@ -17,7 +17,6 @@ export class WebrtcUtilService {
   server info
    */
   private _path: string = this.constant.webrtc_path;
-  private _webSocket: WebSocket = undefined;
   private _socket:Socket = undefined;
 
   /*
@@ -26,7 +25,6 @@ export class WebrtcUtilService {
   private _room_id: number = undefined;
   private _username: string = undefined;
   private _name: string = undefined;
-  private _socket_id: string = undefined;
 
   /*
   media info
@@ -77,14 +75,6 @@ export class WebrtcUtilService {
     this._path = value;
   }
 
-  get webSocket(): WebSocket {
-    return this._webSocket;
-  }
-
-  set webSocket(value: WebSocket) {
-    this._webSocket = value;
-  }
-
   get room_id(): number {
     return this._room_id;
   }
@@ -107,14 +97,6 @@ export class WebrtcUtilService {
 
   set name(value: string) {
     this._name = value;
-  }
-
-  get socket_id(): string {
-    return this._socket_id;
-  }
-
-  set socket_id(value: string) {
-    this._socket_id = value;
   }
 
   get mediaUsable(): boolean {

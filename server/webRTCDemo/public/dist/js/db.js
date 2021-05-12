@@ -26,19 +26,18 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
   if (err) {
     return console.error(err.message);
   }
-  ;
   console.log('successful connection');
-  const eventsDbSql = `CREATE TABLE IF NOT EXISTS events(
+  const eventsTableSql = `CREATE TABLE IF NOT EXISTS events(
       serverId INTEGER PRIMARY KEY,
       workspaceId TEXT,
       entryNumber INTEGER,
       events BLOB,
       roomId INTEGER
       );`;
-  db.run(eventsDbSql, function(err) {
+  db.run(eventsTableSql, function(err) {
     if (err) {
       return console.error(err.message);
-    };
+    }
   });
   const workspaceTableSql = `CREATE TABLE IF NOT EXISTS workspaces(
       workspaceId TEXT UNIQUE,
@@ -49,7 +48,7 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
   db.run(workspaceTableSql, function(err) {
     if (err) {
       return console.error(err.message);
-    };
+    }
   });
 });
 

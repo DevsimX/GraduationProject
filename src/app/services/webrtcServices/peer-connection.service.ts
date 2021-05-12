@@ -86,20 +86,20 @@ export class PeerConnectionService {
     this.receiveOffer(data.socketId, data.sdp);
   }
 
-  handle_answerEvent(data){
+  handle_answerEvent(data) {
     let that = this;
     that.receiveAnswer(data.socketId, data.sdp);
   }
 
-  handle_remoteControlFailEvent(data){
+  handle_remoteControlFailEvent(data) {
 
   }
 
-  handle_remoteControlSuccessEvent(data){
+  handle_remoteControlSuccessEvent(data) {
 
   }
 
-  handle_receiveRemoteControlAskEvent(data){
+  handle_receiveRemoteControlAskEvent(data) {
 
   }
 
@@ -116,18 +116,19 @@ export class PeerConnectionService {
      */
     peerConnection.onicecandidate = function (evt) {
       //如果peer connection要和其他的peer connection通信就会触发这个函数
+      // Send the candidate to the remote peer
       if (evt.candidate) {
-        // Send the candidate to the remote peer
-        that.webrtcUtilService.webSocket.send(JSON.stringify({
-          "eventName": "__ice_candidate",
-          "data": {
-            "id": evt.candidate.sdpMid,
-            "label": evt.candidate.sdpMLineIndex,
-            "sdpMLineIndex": evt.candidate.sdpMLineIndex,
-            "candidate": evt.candidate.candidate,
-            "socketId": socketId,
-          }
-        }));
+        that.webrtcUtilService.socket.emit('_ice_candidate',
+          JSON.stringify({
+            "eventName": "__ice_candidate",
+            "data": {
+              "id": evt.candidate.sdpMid,
+              "label": evt.candidate.sdpMLineIndex,
+              "sdpMLineIndex": evt.candidate.sdpMLineIndex,
+              "candidate": evt.candidate.candidate,
+              "socketId": socketId,
+            }
+          }))
       } else {
         // All ICE candidates have been sent
       }
@@ -199,13 +200,14 @@ export class PeerConnectionService {
           return peerConnection.setLocalDescription(offer);
         })
           .then(function () {
-            that.webrtcUtilService.webSocket.send(JSON.stringify({
-              "eventName": "__offer",
-              "data": {
-                "sdp": peerConnection.localDescription,
-                "socketId": socketId,
-              }
-            }));
+            that.webrtcUtilService.socket.emit('_offer',
+              JSON.stringify({
+                "eventName": "__offer",
+                "data": {
+                  "sdp": peerConnection.localDescription,
+                  "socketId": socketId,
+                }
+              }))
           })
       } catch (err) {
         that.logger.log("*** The following error occurred while handling the negotiationneeded event:");
@@ -246,13 +248,13 @@ export class PeerConnectionService {
           return peerConnection.setLocalDescription(answer);
         })
         .then(function () {
-          that.webrtcUtilService.webSocket.send(JSON.stringify({
-            "eventName": "__answer",
-            "data": {
-              "socketId": socketId,
-              "sdp": peerConnection.localDescription,
-            }
-          }));
+          // that.webrtcUtilService.webSocket.send(JSON.stringify({
+          //   "eventName": "__answer",
+          //   "data": {
+          //     "socketId": socketId,
+          //     "sdp": peerConnection.localDescription,
+          //   }
+          // }));
         })
     } catch (err) {
       that.logger.log("*** The following error occurred while handling the sendAnswer event:");
