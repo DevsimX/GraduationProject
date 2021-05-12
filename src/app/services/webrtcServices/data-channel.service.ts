@@ -4,6 +4,7 @@ import {NeighboursService} from "./neighbours.service";
 import {WebrtcService} from "./webrtc.service";
 import {ConstantService} from "../constant.service";
 import {WebrtcUtilService} from "./webrtc-util.service";
+import {Subject} from "rxjs";
 
 /*
 interface part
@@ -115,7 +116,7 @@ export class DataChannelService {
       that.sendFile(file, neighbour.socketId)
     }
     // @ts-ignore
-    that.webrtcService.emit("file_sent");
+    // that.webrtcService.emit("file_sent");
   };
 
   sendFile(file, socketId) {
@@ -285,7 +286,7 @@ export class DataChannelService {
       that.getTransferredFile(sendId);
     } else {
       // @ts-ignore
-      that.webrtcService.emit("receive_file_chunk", sendId, socketId, fileInfo.name, percent);
+      // that.webrtcService.emit("receive_file_chunk", sendId, socketId, fileInfo.name, percent);
     }
   };
 
@@ -318,9 +319,9 @@ export class DataChannelService {
       name: fileName,
       size: fileSize
     };
-
+    this.acceptSentFile(sendId);
     // @ts-ignore
-    that.webrtcService.emit("receive_file_ask", sendId, socketId, fileName, fileSize);
+    // that.webrtcService.emit("receive_file_ask", sendId, socketId, fileName, fileSize);
   };
 
   //发送同意接收文件信令

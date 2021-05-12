@@ -8,8 +8,7 @@ import {NzUploadFile} from "ng-zorro-antd/upload";
 import {WebrtcUtilService} from "../../../services/webrtcServices/webrtc-util.service";
 import {catchError} from "rxjs/operators";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {Subject, throwError} from "rxjs";
-import {io, Socket} from "socket.io-client";
+import {Subject, Subscription, throwError} from "rxjs";
 
 @Component({
   selector: 'app-blockly-webrtc',
@@ -80,6 +79,10 @@ export class BlocklyWebrtcComponent implements OnInit {
     })
   }
 
+  handleChange(event){
+    console.log(event)
+  }
+
   disconnectFromServer() {
     this.webrtcService.clear();
   }
@@ -118,12 +121,14 @@ export class BlocklyWebrtcComponent implements OnInit {
   }
 
   nzBeforeUpload(file: NzUploadFile): boolean {
+    if(!this.files)
+      this.files = []
     if (this.files.length >= 2) {
       this.notification.error('上传文件数量受限', '一次最多选择两个文件进行上传')
       return false;
     }
     this.files = this.files.concat(file);
-    return false;
+    return true;
   };
 
   sendChatMessageToAll() {
