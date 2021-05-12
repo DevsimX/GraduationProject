@@ -14,7 +14,7 @@ import {io, Socket} from "socket.io-client";
 @Component({
   selector: 'app-blockly-webrtc',
   templateUrl: './blockly-webrtc.component.html',
-  styles: []
+  styleUrls:['./blockly-webrtc.component.less']
 })
 export class BlocklyWebrtcComponent implements OnInit {
   input_room_id_string: string = "";

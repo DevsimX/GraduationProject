@@ -98,7 +98,7 @@
         </button>
       </div>
       <div nz-col class="gutter-row" [nzSpan]="8">
-        <nz-badge [nzCount]="webrtcUtilService.unreadChatMessageNum">
+        <nz-badge [nzCount]="webrtcUtilService.unreadChatMessageNum" >
           <button [disabled]="!webrtcUtilService.connected" style="width: 110px" nz-button nzType="primary"
                   (click)="openChatRoom()">聊天室
           </button>
