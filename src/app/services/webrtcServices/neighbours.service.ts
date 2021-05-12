@@ -61,7 +61,11 @@ export class NeighboursService {
 
   addTrackToNeighbour(socketId: string, track: MediaStreamTrack) {
     let neighbour = this.getNeighbourBySocketId(socketId);
-    let stream = neighbour.mediaStream;
+    let stream;
+    if(!neighbour.mediaStream)
+      stream = neighbour.mediaStream = new MediaStream();
+    else
+      stream = neighbour.mediaStream;
     if (track.kind === 'video') {
       if (stream.getVideoTracks().length !== 0) {
         stream.removeTrack(stream.getVideoTracks()[0]);

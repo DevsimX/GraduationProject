@@ -33,7 +33,6 @@ export class PeerConnectionService {
         undefined,
         [],
         undefined);
-      console.log(this.webrtcUtilService.neighbours)
     }
   }
 
@@ -113,7 +112,6 @@ export class PeerConnectionService {
     peer connection event part
      */
     peerConnection.onicecandidate = function (evt) {
-      console.log(evt)
       //如果peer connection要和其他的peer connection通信就会触发这个函数
       // Send the candidate to the remote peer
       if (evt.candidate) {

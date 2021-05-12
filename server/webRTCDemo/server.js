@@ -170,8 +170,6 @@ async function onConnect_(user) {
   });
 
   user.on('_ice_candidate',async (data) => {
-    console.log('ice')
-    console.log(data)
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
@@ -188,8 +186,6 @@ async function onConnect_(user) {
   })
 
   user.on('_offer',async (data) => {
-    console.log('offer')
-    console.log(data)
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
@@ -203,8 +199,6 @@ async function onConnect_(user) {
   })
 
   user.on('_answer',async (data) => {
-    console.log('answer')
-    console.log(data)
     let socket = getWebRtcClientBySocketId(data.socketId,getRoomId(user)).socket;
 
     if(socket){
