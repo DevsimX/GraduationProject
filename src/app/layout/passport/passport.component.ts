@@ -37,7 +37,6 @@ export class LayoutPassportComponent {
       const container = document.createElement('div')
       windowHalfX = window.innerWidth / 2
       container.style.height = (SCREEN_HEIGHT - 350) + 'px';
-      container.style.marginTop = '-100px';
       container.style.zIndex = '-20';
       document.getElementById('index').appendChild(container)
 
