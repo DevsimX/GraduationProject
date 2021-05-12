@@ -27,13 +27,14 @@ export class PeerConnectionService {
     let that = this;
     for (let i in data) {
       that.neighbourService.addNeighbour(i,
-        data[i]['name'],
         data[i]['username'],
+        data[i]['name'],
         undefined,
         undefined,
         [],
         undefined);
       that.createPeerConnection(i);
+      console.log(this.webrtcUtilService.neighbours)
     }
   }
 
