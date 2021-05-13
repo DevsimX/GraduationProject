@@ -491,26 +491,20 @@ class Database {
   };
 
   async getWhiteBoardEvent (roomId,serverId) {
-    let res = [];
-    this.db.all(`SELECT event,serverId from whiteboard
+    return new Promise((resolve, reject) => {
+      this.db.all(`SELECT event,serverId from whiteboard
                    WHERE
                    serverId > ?
                    AND roomId = ?;`,[serverId,roomId],
-      (err, entries) => {
-        if (err) {
-          console.error(err)
-          console.error(err.message);
-        } else {
-          console.log(entries)
-          entries.forEach((entry) => {
-            res.push({
-              event: entry.event,
-              serverId: entry.serverId,
-            })
-          });
-        }
-      });
-    return JSON.stringify(res);
+        (err, entries) => {
+          if (err) {
+            console.error(err)
+            console.error(err.message);
+          } else {
+            resolve(entries);
+          }
+        });
+    })
   }
 
   updateWhiteBoardEvent(uuid,roomId,socketId,event){
@@ -535,13 +529,25 @@ class Database {
   }
 
   undoWhiteboardEvent(uuid,roomId){
-    this.db.run(
-      `DELETE FROM whiteboard WHERE roomId = ? AND uuid = ?;`,[roomId,uuid],
-      (err) => {
-        if (err) {
-          console.error(err.message);
-        }
-      });
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `DELETE FROM whiteboard WHERE roomId = ? AND uuid = ?;`,[roomId,uuid],
+        (err) => {
+          if (err) {
+            console.error(err.message);
+          }
+        });
+
+      this.db.all(
+        `SELECT MAX(serverId) FROM whiteboard WHERE roomId = ?;`,[roomId],
+        (err,res) => {
+          if (err) {
+            console.error(err.message);
+          }else {
+            resolve(res);
+          }
+        });
+    });
   }
 
   config(){

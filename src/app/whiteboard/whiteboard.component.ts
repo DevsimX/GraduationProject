@@ -69,11 +69,15 @@ export class WhiteboardComponent implements OnInit {
 
   onCanvasClear() {
     this.webrtcUtilService.socket.emit('clear')
+    this.serverId = 0
   }
 
   onCanvasUndo(event) {
     //TODO send to server, an instruction
-    this.webrtcUtilService.socket.emit('undo',event)
+    this.webrtcUtilService.socket.emit('undo',event,(serverId)=>{
+      console.log(serverId);
+      this.serverId = serverId
+    })
   }
 
   onCanvasSave(event) {

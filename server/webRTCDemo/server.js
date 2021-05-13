@@ -277,7 +277,7 @@ async function onConnect_(user) {
   user.on('undo',async (uuid,callback)=>{
     console.log("undo")
     let roomId = getRoomId(user);
-    await WhiteboardHandlers.undoEvent(uuid,roomId);
+    await WhiteboardHandlers.undoEvent(uuid,roomId,callback);
     user.to(roomId).emit('undoEvent',uuid);
   })
 }
