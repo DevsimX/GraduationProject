@@ -15,8 +15,7 @@ async function clearEvent(roomId) {
 
 async function undoEvent(uuid,roomId,callback) {
   const serverId = await database.undoWhiteboardEvent(uuid,roomId);
-  console.log(serverId);
-  callback(serverId)
+  return serverId[0]['MAX(serverId)'];
 }
 
 async function deleteRoom(roomId) {

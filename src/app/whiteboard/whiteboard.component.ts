@@ -28,9 +28,11 @@ export class WhiteboardComponent implements OnInit {
       console.log('clearEvent')
       this.canvasWhiteboardService.clearCanvas();
     })
-    this.webrtcUtilService.socket.on('undoEvent',(uuid)=>{
+    this.webrtcUtilService.socket.on('undoEvent',(data)=>{
       console.log('undoevent')
-      this.canvasWhiteboardService.undoCanvas(uuid);
+      console.log(data)
+      this.canvasWhiteboardService.undoCanvas(data.uuid);
+      this.serverId = data.serverId;
     })
   }
 
