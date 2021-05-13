@@ -32,7 +32,7 @@ export class WhiteboardComponent implements OnInit {
       console.log('undoevent')
       console.log(data)
       this.canvasWhiteboardService.undoCanvas(data.uuid);
-      this.serverId = data.serverId;
+      this.serverId = data.serverId? data.serverId:0;
     })
   }
 
