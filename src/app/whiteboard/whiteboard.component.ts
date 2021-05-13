@@ -59,7 +59,7 @@ export class WhiteboardComponent implements OnInit {
     // Stringify the Array<string> to get a "string", so we are now ready to put this item in the storage
     const stringifiedStorageUpdates: string = JSON.stringify(stringifiedUpdatesArray);
 
-    this.webrtcUtilService.socket.emit('update_whiteboard_events',uuid,stringifiedStorageUpdates)
+    this.webrtcUtilService.socket.emit('update_whiteboard_event',uuid,stringifiedStorageUpdates)
   }
 
   onCanvasClear() {
