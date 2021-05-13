@@ -50,6 +50,18 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
       return console.error(err.message);
     }
   });
+  const whiteboardTableSql = `CREATE TABLE IF NOT EXISTS whiteboard(
+      serverId INTEGER PRIMARY KEY,
+      userId TEXT ,
+      uuid TEXT,
+      event TEXT,
+      roomId TEXT
+      );`
+  db.run(whiteboardTableSql, function(err) {
+    if (err) {
+      return console.error(err.message);
+    }
+  });
 });
 
 module.exports = db;

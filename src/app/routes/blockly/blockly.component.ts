@@ -157,7 +157,7 @@ export class BlocklyComponent implements OnInit {
     private notification: NzNotificationService,
     private modal: NzModalService,
     private webrtcService: WebrtcService,
-    private webrtcUtilService: WebrtcUtilService,
+    public webrtcUtilService: WebrtcUtilService,
     @Inject(DA_SERVICE_TOKEN) private tokenService: ITokenService,
   ) {
   }

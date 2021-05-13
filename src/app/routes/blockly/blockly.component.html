@@ -79,7 +79,7 @@
           </div>
         </div>
       </nz-tab>
-      <nz-tab nzTitle="在线白板" nzDisabled>
+      <nz-tab nzTitle="在线白板" [nzDisabled]="!webrtcUtilService.connected">
         <ng-template nz-tab>
           <app-whiteboard></app-whiteboard>
         </ng-template>

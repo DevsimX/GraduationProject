@@ -490,6 +490,59 @@ class Database {
     });
   };
 
+  async getWhiteBoardEvent (roomId,serverId) {
+    let res = [];
+    this.db.all(`SELECT event,serverId from whiteboard
+                   WHERE
+                   serverId > ?
+                   AND roomId = ?;`,[serverId,roomId],
+      (err, entries) => {
+        if (err) {
+          console.error(err)
+          console.error(err.message);
+        } else {
+          entries.forEach((entry) => {
+            res.push({
+              event: entry.event,
+              serverId: entry.serverId,
+            })
+          });
+        }
+      });
+    return JSON.stringify(res);
+  }
+
+  updateWhiteBoardEvent(uuid,roomId,socketId,event){
+    this.db.run(`INSERT INTO whiteboard
+            (uuid, roomId, socketId,event) VALUES(?,?,?,?)`,
+      [uuid,roomId,socketId,event],
+      (err) => {
+        if (err) {
+          console.error(err.message);
+        }
+      });
+  }
+
+  clearWhiteBoardEvent(roomId){
+    this.db.run(
+      `DELETE FROM whiteboard WHERE roomId = '${roomId}';`,
+      (err) => {
+        if (err) {
+          console.error(err.message);
+        }
+      });
+  }
+
+  undoWhiteboardEvent(uuid,roomId){
+    this.db.run(
+      `DELETE FROM whiteboard WHERE roomId = ? AND uuid = ?;`,[roomId,uuid],
+      (err) => {
+        if (err) {
+          console.error(err.message);
+        }
+      });
+  }
+
   config(){
     var interpreter = new Interpreter();
 
