@@ -491,6 +491,17 @@ class Database {
   };
 
   async getWhiteBoardEvent (roomId,serverId) {
+    this.db.all(`SELECT * from whiteboard;`,
+      (err, entries) => {
+        if (err) {
+          console.error(err)
+          console.error(err.message);
+        } else {
+          entries.forEach((entry) => {
+            console.log(entries)
+          });
+        }
+      });
     let res = [];
     this.db.all(`SELECT event,serverId from whiteboard
                    WHERE

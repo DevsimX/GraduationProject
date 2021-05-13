@@ -52,7 +52,7 @@ const db = new sqlite3.Database('./blocklyDatabase.sqlite', (err) => {
   });
   const whiteboardTableSql = `CREATE TABLE IF NOT EXISTS whiteboard(
       serverId INTEGER PRIMARY KEY,
-      userId TEXT ,
+      socketId TEXT ,
       uuid TEXT,
       event TEXT,
       roomId TEXT
