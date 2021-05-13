@@ -78,7 +78,7 @@
     </div>
     <div style="margin-top: 25px;" nz-row [nzGutter]="16">
       <div nz-col class="gutter-row" [nzSpan]="8">
-        <nz-upload nzAction="https://www.mocky.io/v2/5cc8019d300000980a055e76" [(nzFileList)]="files" [nzBeforeUpload]="nzBeforeUpload">
+        <nz-upload [(nzFileList)]="files" [nzBeforeUpload]="nzBeforeUpload">
           <button [disabled]="!webrtcUtilService.connected" style="width: 110px" nz-button><i nz-icon
                                                                                           nzType="upload"></i><span>选择文件</span>
           </button>

@@ -22,7 +22,7 @@ export class BlocklyWebrtcComponent implements OnInit {
   shareDevice: string = 'shareCamera';
   roomCamerasVisible: boolean = false;
   chatRoomVisible: boolean = false;
-  files: NzUploadFile[] = [];
+  files:NzUploadFile[] = [];
   chatMessage: string = '';
   connectionError:Subject<string> = new Subject<string>();
 
@@ -120,15 +120,13 @@ export class BlocklyWebrtcComponent implements OnInit {
       'Something bad happened; please try again later.');
   }
 
-  nzBeforeUpload(file: NzUploadFile): boolean {
-    if(!this.files)
-      this.files = []
+  nzBeforeUpload = (file, fileList): boolean => {
     if (this.files.length >= 2) {
       this.notification.error('上传文件数量受限', '一次最多选择两个文件进行上传')
       return false;
     }
-    this.files = this.files.concat(file);
-    return true;
+    this.files = this.files.concat(fileList)
+    return false;
   };
 
   sendChatMessageToAll() {
