@@ -10,7 +10,7 @@ import {WebrtcUtilService} from "../services/webrtcServices/webrtc-util.service"
 })
 export class WhiteboardComponent implements OnInit {
   @ViewChild(CanvasWhiteboardComponent) canvasWhiteboardComponent: CanvasWhiteboardComponent;
-  serverId:number = -1;
+  serverId:number = 0;
   //等待开发
 
   constructor(private canvasWhiteboardService: CanvasWhiteboardService,
