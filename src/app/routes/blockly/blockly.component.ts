@@ -533,7 +533,7 @@ export class BlocklyComponent implements OnInit {
 
 
   addScenePictures() {
-    let baseUrl = 'https://www.pikachu.today/pictures/background/';
+    let baseUrl = 'https://121.4.43.229:6969/background/';
     let bg = ['Underwater.png', 'Start.png', 'Soccer.png', 'Mountain.png', 'Galaxy.png', 'Desert.png', 'Castle.png', 'Boardwalk.png'];
     this.bgPictures = [];
     bg.forEach((item, index) => {
@@ -545,7 +545,7 @@ export class BlocklyComponent implements OnInit {
   }
 
   addMovePictures() {
-    let baseUrl = 'https://www.pikachu.today/pictures/';
+    let baseUrl = 'https://121.4.43.229:6969/';
     let bg = ['blockly_zebra', 'blockly_fish', 'blockly_cat2', 'blockly_cat', 'blockly_basketball', 'blockly_arrow', 'blockly_apple'];
     this.movePictures = [];
     bg.forEach((item, index) => {
@@ -558,7 +558,7 @@ export class BlocklyComponent implements OnInit {
 
   addOtherPictures() {
     let context = ['blockly_zebra', 'blockly_fish', 'blockly_cat2', 'blockly_cat', 'blockly_basketball', 'blockly_arrow', 'blockly_apple'];
-    let baseUrl = 'https://www.pikachu.today/pictures/';
+    let baseUrl = 'https://121.4.43.229:6969/';
     this.otherPictures = [];
     context.forEach((item, index) => {
       if (!(index % 4)) {

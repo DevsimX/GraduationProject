@@ -334,7 +334,7 @@ export class DataChannelService {
     if (!channel) {
       that.handle_receive_file_errorEvent(new Error("Channel has been destoried"), sendId);
     }
-    packet = { 
+    packet = {
       type: "__file",
       signal: "accept",
       sendId: sendId
