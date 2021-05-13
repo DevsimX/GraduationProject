@@ -21,18 +21,22 @@ export class WhiteboardComponent implements OnInit {
   ngOnInit(): void {
     this.getEvent()
     this.webrtcUtilService.socket.on('dispatch',() =>{
+      console.log('dispatch')
       this.getEvent();
     })
     this.webrtcUtilService.socket.on('clearEvent',() =>{
+      console.log('clearEvent')
       this.canvasWhiteboardService.clearCanvas();
     })
     this.webrtcUtilService.socket.on('undoEvent',(uuid)=>{
+      console.log('undoevent')
       this.canvasWhiteboardService.undoCanvas(uuid);
     })
   }
 
   getEvent(){
     this.webrtcUtilService.socket.emit('get_whiteboard_event',this.serverId,(events)=>{
+      console.log(events)
       let array = JSON.parse(events)
       array.forEach((item)=>{
         let item_event = item.event;
@@ -44,6 +48,7 @@ export class WhiteboardComponent implements OnInit {
 
   updateCanvas(event: string, serverId: number){
     let array = JSON.parse(event);
+    console.log(array)
     const updates: Array<CanvasWhiteboardUpdate> = array.map(updateJSON =>
       CanvasWhiteboardUpdate.deserializeJson(updateJSON));
 

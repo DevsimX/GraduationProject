@@ -57,6 +57,7 @@ function deleteRoomFromList(roomId) {
       roomList.splice(i, 1);
       EventsHandlers.deleteFromSnapShotMap(roomId).then(r => {
       });
+      WhiteboardHandlers.deleteRoom(roomId).then(r => {})
       console.log('因为房间人数不足，房间' + roomId + '被删除')
     }
   }
@@ -254,23 +255,27 @@ async function onConnect_(user) {
   });
 
   user.on('get_whiteboard_event', async (serverId,callback) => {
+    console.log("get_whiteboard_event")
     let roomId = getRoomId(user);
     await WhiteboardHandlers.getWhiteBoardEvent(roomId,serverId, callback);
   })
 
   user.on('update_whiteboard_event', async (uuid,event,callback) => {
+    console.log("update_whiteboard_event")
     let roomId = getRoomId(user);
     await WhiteboardHandlers.updateWhiteBoardEvent(uuid,roomId,user.id,event, callback);
     user.to(roomId).emit('dispatch')
   })
 
   user.on('clear',async (callback)=>{
+    console.log("clear")
     let roomId = getRoomId(user);
     await WhiteboardHandlers.clearEvent(roomId);
     user.to(roomId).emit('clearEvent')
   })
 
   user.on('undo',async (uuid,callback)=>{
+    console.log("undo")
     let roomId = getRoomId(user);
     await WhiteboardHandlers.undoEvent(uuid,roomId);
     user.to(roomId).emit('undoEvent',uuid);

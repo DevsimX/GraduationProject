@@ -17,7 +17,12 @@ async function undoEvent(uuid,roomId) {
   await database.undoWhiteboardEvent(uuid,roomId);
 }
 
+async function deleteRoom(roomId) {
+  await database.clearWhiteBoardEvent(roomId);
+}
+
 module.exports.getWhiteBoardEvent = getWhiteBoardEvent;
 module.exports.updateWhiteBoardEvent = updateWhiteBoardEvent;
 module.exports.clearEvent = clearEvent;
 module.exports.undoEvent = undoEvent;
+module.exports.deleteRoom = deleteRoom;
