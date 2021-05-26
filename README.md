@@ -8,7 +8,6 @@
 1. 参考blockly-rtc实现的多人协同技术
 2. 基于canvas实现的2d游戏场景
 3. 基于Google Blockly实现的可视化代码编辑器
-4. 
 
 # 配置使用环境
 
@@ -16,9 +15,8 @@
 
 git clone https://github.com/Device-astralis/GraduationProject.git
 
-cd GraduationProject
-
 ## 安装依赖
+cd GraduationProject  
 npm install
 
 ## 编译运行
