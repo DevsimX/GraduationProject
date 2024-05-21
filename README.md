@@ -14,6 +14,7 @@ The currently developed features are as follows:
 ## Clone the Project
 ```bash
 git clone https://github.com/Device-astralis/GraduationProject.git
+```bash
 
 
 ## Install Dependencies
