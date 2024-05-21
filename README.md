@@ -18,17 +18,19 @@ git clone https://github.com/Device-astralis/GraduationProject.git
 
 
 ## Install Dependencies
+``` 
 cd GraduationProject  
 npm install
+``` 
 
 ## Compile and Run
-
+``` 
 npm start
-
+``` 
 ## Build and Deploy
-
+``` 
 npm run build
-
+``` 
 # View it online
 
 [blockly-based online teaching platform](https://www.xytcloud.ltd) 
