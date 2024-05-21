@@ -12,9 +12,9 @@ The currently developed features are as follows:
 # Configuration and Usage
 
 ## Clone the Project
-```bash
+```
 git clone https://github.com/Device-astralis/GraduationProject.git
-```bash
+```
 
 
 ## Install Dependencies
